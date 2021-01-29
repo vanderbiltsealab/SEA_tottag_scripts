@@ -1,7 +1,7 @@
 # SEA_tottag_scripts
 Repo for TotTag proximity data scripts. 
 
-## Analysis
+## scripts/Analysis
 Scripts used to analyze the downloaded TotTag log files. To begin, run the tottagAverager.py script, which takes at least 3 arguments: the starting Unix timestamp, the ending Unix timestamp, and a list of every log file that you would like to average together. The data is averaged accross timestamps by dyad, so the measured value at a certain timestamp from one TotTag is averaged with the value at the same timestamp from its companion TotTag. The script can be run like so:
 
 `python tottagAverager.py START_TIME_VAL END_TIME_VAL LOG_FILE_1 LOG_FILE_2...`
