@@ -1,5 +1,9 @@
 # SEA_tottag_scripts
 Repo for TotTag proximity data scripts. 
+The goal for weeks of Jan 31 and Feb 7 is to create a python script that produces the following from the testing log file:
+1) Identify 'check-ins' from proximity data based off distance and time within a certain distance interval
+2) Identify window of time around event (arrival time vs. departure time)
+3) Identify each window of interaction by who initiates interaction (which tag from pair approaches the other and for how long)
 
 ## How to clone:
 ### Please refer to this handy tutorial github has created: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository
