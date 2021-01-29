@@ -8,6 +8,8 @@ Repo for TotTag proximity data scripts.
 Once you have your github repository set up on your local machine, **always make sure** to `git pull` before making **any changes**.
 This will ensure that if someone else has contributed to the code base while you were not active, their changes are reflected in your local repository, this helps later on down the workflow pipeline when pushing code (github will give you an error if you try to push to a branch that has changes not seen in your local repo).
 
+If you want to learn what's going on 'under the hood,' refer to: https://www.git-scm.com/docs/git-pull
+
 ## scripts/Analysis 
 ### (this code is from https://github.com/lab11/socitrack/tree/master/software/analysis)
 Scripts used to analyze the downloaded TotTag log files. To begin, run the tottagAverager.py script, which takes at least 3 arguments: the starting Unix timestamp, the ending Unix timestamp, and a list of every log file that you would like to average together. The data is averaged accross timestamps by dyad, so the measured value at a certain timestamp from one TotTag is averaged with the value at the same timestamp from its companion TotTag. The script can be run like so:
