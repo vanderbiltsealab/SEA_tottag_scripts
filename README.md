@@ -27,3 +27,7 @@ Next, run the tottagSmoother.py script, which takes at least 2 arguments: the nu
 Now, your data is ready to go, and you can begin running the tottagStats.py script on it. This script produces summary statistics on the smoothed log file. The statistics it outputs are the amount of time each dyad spent within 3ft of one another, the amount of time the TotTags were in range of one another, and the number of times a dyad re-enters 3ft after leaving it for at least 30 seconds. The input for this script is simply a single log file:
 
 `python tottagStats.py SMOOTHED_LOG_FILE_1`
+
+## scripts/analysis.py
+### this code is currently being developed by the Spring 2021 data analysis team lead by Dr. Virginia Salo
+
