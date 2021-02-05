@@ -30,4 +30,7 @@ Now, your data is ready to go, and you can begin running the tottagStats.py scri
 
 ## scripts/analysis.py
 ### this code is currently being developed by the Spring 2021 data analysis team lead by Dr. Virginia Salo
+to use `analysis.py` run: 
+
+`pip3 install sortedcontainers` 
 
