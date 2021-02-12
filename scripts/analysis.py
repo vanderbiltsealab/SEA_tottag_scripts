@@ -1,18 +1,30 @@
 import os
 import sys
 from sortedcontainers import SortedDict
+# documentation on sortedContainers: http://www.grantjenks.com/docs/sortedcontainers/
 
+# some variables
 OUT_OF_RANGE_CODE = 999999
+DATAFILE = "03_SS_20210109.LOG"
+inRangeDist = 915  # 3ft = 915mm
 
-# DATAFILE = "03_SS_20210109.LOG"
-# a more robust version of the above line would be to accept an argument as the
-# log file as shown below
-DATAFILE = sys.argv[1] # argv is the array of command line arguments after 'python3'
-# starting at index 0
+# argv is the array of command line arguments after 'python3' starting at index 0
+DATAFILE = sys.argv[1]
+x = sys.argv[2]
 
+# ************************************************************************ #
+# ------ Step1: filter out timestamps where proximity is within 3ft ------ #
+# ************************************************************************ #
+
+# insideDict and outsideDict are both dictionaries of arrays of tuples. Each key in both
+# dictionaries are device tags, and each key is associated with an array of tuples.
+# Each tuple is a pair of values where the first value is the timestamp where proximity
+# is within(for insideDict) or outside(for outsideDict) 3ft, and the second value is the
+# actual proximity data
 insideDict = {}
 outsideDict = {}
 with open(DATAFILE) as f:
+    # the following string operation gets the ID for the current device
     tag = f.readline()
     header = tag
     if tag.strip():  # strip will remove all leading and trailing whitespace such as '\n' or ' ' by default
@@ -20,7 +32,7 @@ with open(DATAFILE) as f:
         print('this is header', tag)
         totTagID = tag.split()[6].split(',')[0]
         # date = tag.split()[8].split(',')[0]
-        #  timeOfDate = tag.split()[9].split(',')[0]
+        # timeOfDate = tag.split()[9].split(',')[0]
         # timeStamp = tag.split()[11].split(',')[0]
         # format is tag.split()[7th thing separated by spaces].split(',')[from 0th column of string til next ',']
         # .split() documentation: https://python-reference.readthedocs.io/en/latest/docs/str/split.html
@@ -30,59 +42,50 @@ with open(DATAFILE) as f:
         # print('this is date after tag.split()[8].split(',')[0]:', date)
         # print('this is timeOfDate after tag.split()[9].split(',')[0]:', timeOfDate)
         # print('this is timeStamp after tag.split()[11].split(',')[0]:', timeStamp)
-
-    sd = SortedDict()
-    # documentation on sortedContainers: http://www.grantjenks.com/docs/sortedcontainers/
+    # start going through each line of the log file and separate in range and out of range data
     for line in f:
+        # if line is not a comment
         if line[0] != '#':
+            # tokens is a list where tokens[0] is timestamp, tokens[1] is device ID, and tokens[2] is measurement
             tokens = line.split('\t')
-            # print(tokens) # this is a list of [timeStamp1, totTagID1, distance1],...
-            # ...[timeStampN, totTagIDN, distanceN]
 
             # the time stamp here is in seconds!
             # 1604574620 is Thursday, November 5, 2020 11:10:21AM
 
-            # print(tokens[2]) # this is column array of timeStamps
-
+            # check for out of range code
             if int(tokens[2]) != OUT_OF_RANGE_CODE:
-                # if float(tokens[2]) <= 3.0: # this is checking is tokens[2] is <= 3mm
-                # should be 914.4 (=3 ft), but lets make it 915.
-                # type should be int as well, better not to introduce rounding error of any kind
-                if int(tokens[2]) <= 915:
-                    # nTag = tokens[1] # nTag is a column array of totTagIDs
+                # if proximity is within range (3ft/915mm)
+                if int(tokens[2]) <= inRangeDist:
+                    timeStampInCheckInRange = tokens[0]
+                    totTagIDInCheckInRange = tokens[1]
+                    distanceInCheckInRange = tokens[2]
 
-                    timeStampinCheckInRange = tokens[0] # this column array is 1:1
-                    # correspondence with inCheckInRange
-
-                    totTagIDinCheckInRange = tokens[1]
-
-                    distanceInCheckInRange = tokens[2] # assuming operations are matrix-wise,
-                    # this should give us token totTagIDs exclusively inside 3ft
-                    # above line of code DOES give us column exclusively inside 3ft.
-
-                    # if nTag not in mDict: # if totTagID Column array not in mDict,
-                    if totTagIDinCheckInRange not in insideDict:
-                    # for key nTag set value to [timeStamp, distance] or if its
-                    # in mDict append value [timeStamp, distance]
-                        # mDict[nTag] = [(tokens[0], tokens[2])]
-                        insideDict[totTagIDinCheckInRange] = [(timeStampinCheckInRange,
+                    # if this device is not added as a key to the dictionary yet, create an array for this device
+                    # and add in the tuple of (timestamp, distance); otherwise, append the tuple to the end of the array
+                    if totTagIDInCheckInRange not in insideDict:
+                        insideDict[totTagIDInCheckInRange] = [(timeStampInCheckInRange,
                                                                distanceInCheckInRange)]
                     else:
-                        # mDict[nTag].append((tokens[0], tokens[2]))
-                        # mDict[inCheckInRange[1]].append((inCheckInRange[0], inCheckInRange[2]))
-                        insideDict[totTagIDinCheckInRange].append((timeStampinCheckInRange,
+                        insideDict[totTagIDInCheckInRange].append((timeStampInCheckInRange,
                                                                    distanceInCheckInRange))
+                # same as above; adding keys and tuples to outsideDict
                 else:
                     timeStampOutCheckInRange = tokens[0]
                     totTagIDOutCheckInRange = tokens[1]
                     distanceOutCheckInRange = tokens[2]
-                    # print('this is outCheckInRange', outCheckInRange) ## works as
-                    # intended
+                    if totTagIDOutCheckInRange not in outsideDict:
+                        outsideDict[totTagIDOutCheckInRange] = [(timeStampOutCheckInRange, distanceOutCheckInRange)]
+                    else:
+                        outsideDict[totTagIDOutCheckInRange].append((timeStampOutCheckInRange, distanceOutCheckInRange))
 
-                    # next step is to differentiate them by timeStamp since they
-                    # are unique!
 
+# ********************************************************************************************* #
+# ------ Step2: filter out timestamps where proximity is within range for over 2 seconds ------ #
+# ********************************************************************************************* #
 
+# filtered is a dictionary of arrays of timestamps. The keys of the filtered dictionary
+# is teh device tags, and each tag is associated with an array of timestamps that count
+# as valid check-ins (within 3ft range for over 2 seconds)
 filtered = {}
 for key in insideDict:
     index = 0
@@ -112,15 +115,38 @@ for key in insideDict:
         # go to next index location after the previous consecutive group of timestamps
         index = index + 1
 
-
 # print out dictionary for checking ...
 # for key in filtered:
-#    print(str(key))
-#    for index in range(len(filtered[key])):
-#        print("\t" + str(filtered[key][index]))
+#   print(str(key))
+#   for index in range(len(filtered[key])):
+#       print("\t" + str(filtered[key][index]))
 
-# print(mDict.get("c0:98:e5:42:01:05"))
-# print(mDict.get("c0:98:e5:42:01:06"))
+
+# *********************************************************************************** #
+# ------ Step3: get a list of time range of x seconds before and after checkin ------ #
+# *********************************************************************************** #
+
+# x = 2 # test
+# sec is a dictionary of arrays of tuples; each key is the tag of a device, and
+# each key maps to an array of tuples that represents a range of x seconds before
+# a checkin and x seconds after the checkin, i.e. (timestamp - x, timestamp + x)
+sec = {}
+# go through the filtered dictionary and append tuples to the array
+for key in filtered:
+    for index in range(len(filtered[key])):
+        timestamp = (int)(filtered[key][index])
+        checkinRange = (timestamp - x, timestamp + x)
+        if key not in sec:
+            sec[key] = [checkinRange]
+        else:
+            sec[key].append(checkinRange)
+
+# print out dictionary for checking ...
+# for key in sec:
+#    print(str(key))
+#    for index in range(len(sec[key])):
+#        print("\t" + str(sec[key][index]))
+
 
 # turns out from files below that logic i wrote only gives singular entries
 
@@ -132,5 +158,3 @@ for key in insideDict:
 # #
 # file1.close()
 # file2.close()
-
-# print(mDict)
