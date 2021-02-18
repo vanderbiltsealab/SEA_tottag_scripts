@@ -5,13 +5,13 @@ from sortedcontainers import SortedDict
 
 # some variables
 OUT_OF_RANGE_CODE = 999999
-DATAFILE = "03_SS_20210109.LOG"
+# DATAFILE = "03_SS_20210109.LOG"
 inRangeDist = 915  # 3ft = 915mm
-x = 2
+# x = 2
 
 # argv is the array of command line arguments after 'python3' starting at index 0
-# DATAFILE = sys.argv[1]
-# x = sys.argv[2]
+DATAFILE = sys.argv[1]
+x = int(sys.argv[2])
 
 # ************************************************************************ #
 # ------ Step1-1: filter out timestamps where proximity is within 3ft ------ #
@@ -123,9 +123,11 @@ for key in insideDict:
 #        print("\t" + str(filtered[key][index]))
 
 # print out final result
+# just trying to format the printout
 print("Time\t\tTag\t\t\t\t\t\tProx(ft)\tCheck_Occur\tCheck_num")
 for key in filtered:
     for index in range(len(filtered[key])):
+        # converting to ft
         dist = float(0.00328 * filtered[key][index][1])
         print(str(filtered[key][index][0]) + "\t" + str(key) + "\t" + str("{:10.4f}".format(dist)) + "\t\t1\t\t\t" + str(index+1))
         # print(str(filtered[key][index][0]) + "\t" + str(key) + "\t" + str(filtered[key][index][1]) + "\t\t1\t\t\t" + str(index+1))
