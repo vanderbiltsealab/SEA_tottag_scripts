@@ -34,3 +34,9 @@ to use `analysis.py` run:
 
 `pip3 install sortedcontainers` 
 
+### usage:
+to use analysis.py simply run:
+
+`python3 analysis.py <logfile_1> <logfile_2> ... <logfile_N> <time step>`
+
+example usage: `python3 analysis.py 03_SS_20210109.LOG 06_ZS_20210109.LOG 07_VS_20210109.LOG 2`
