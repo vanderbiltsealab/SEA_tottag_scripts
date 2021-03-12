@@ -29,8 +29,14 @@ Now, your data is ready to go, and you can begin running the tottagStats.py scri
 `python tottagStats.py SMOOTHED_LOG_FILE_1`
 
 ## scripts/analysis.py
-### this code is currently being developed by the Spring 2021 data analysis team lead by Dr. Virginia Salo
+### this code is currently being developed by the Spring 2021 data analysis team led by Dr. Virginia Salo
 to use `analysis.py` run: 
 
 `pip3 install sortedcontainers` 
 
+### usage:
+to use analysis.py simply run:
+
+`python3 analysis.py <logfile_1> <logfile_2> ... <logfile_N> <time step>`
+
+example usage: `python3 analysis.py 03_SS_20210109.LOG 06_ZS_20210109.LOG 07_VS_20210109.LOG 2`
