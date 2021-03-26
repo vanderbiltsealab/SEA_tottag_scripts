@@ -325,6 +325,14 @@ for file in listFiles:
                 helper_index += 1
                 total_count += 1
 
+# notes:
+'''
+Found that in the .csv files there are some odd sequences that are affecting the way this motion ordering is 
+supposed to go. I'm under the assumption that the timestamps are all ordered from the .csv files but that 
+isn't the case. In one instance in the .csv, the timestamps go from 1610189662 to 1610189647 to 1610189779. When
+the expected ordering should be incremental. Should consult with teammates on this. 
+'''
+
 
 # printing dictionary to output file just for checking
 outfile3 = "out3"
