@@ -219,7 +219,7 @@ sdMotion = SortedDict()
 # here's a list of names of the motions data file from Amanda's scripts
 # listFiles = ["03_motions.csv", "06_motions.csv", "07_motions.csv"]
 
-listFiles = ["03_motions.csv"] # testing only one for now
+listFiles = ["motion_file_03.csv"] # testing only one for now
 for file in listFiles:
     with open(file) as m: # the idea here is to have a reference array so we know what the next line will be
         # when comparing timestamps below vvvvvv
