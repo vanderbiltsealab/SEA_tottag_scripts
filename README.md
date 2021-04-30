@@ -1,9 +1,11 @@
 # SEA_tottag_scripts
 Repo for TotTag proximity data scripts. 
-The goal for weeks of Jan 31 and Feb 7 is to create a python script that produces the following from the testing log file:
+The goals for Spring 2021 is to create a python script that produces the following from the testing log file:
 1) Identify 'check-ins' from proximity data based off distance and time within a certain distance interval
 2) Identify window of time around event (arrival time vs. departure time)
 3) Identify each window of interaction by who initiates interaction (which tag from pair approaches the other and for how long)
+4) Identify whether there is motion for a timestamp
+5) Link motion and proximity data per timestamp
 
 ## How to clone:
 ### Please refer to this handy tutorial github has created: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository
@@ -32,11 +34,18 @@ Now, your data is ready to go, and you can begin running the tottagStats.py scri
 ### this code is currently being developed by the Spring 2021 data analysis team led by Dr. Virginia Salo
 to use `analysis.py` run: 
 
+### How to install sortedcontainers library needed in analysis.py
 `pip3 install sortedcontainers` 
 
-### usage:
-to use analysis.py simply run:
+### Before you install pandas, make sure you have pip installed
+Refer to this website for details (https://pip.pypa.io/en/stable/installing/). Pip should already be installed with installation of python but to be sure, run `pip -V` to check which version you are running.
 
-`python3 analysis.py <logfile_1> <logfile_2> ... <logfile_N> <time step>`
+### How to install pandas library needed in analysis.py
+`pip install pandas`
 
-example usage: `python3 analysis.py 03_SS_20210109.LOG 06_ZS_20210109.LOG 07_VS_20210109.LOG 2`
+### Usage of analysis.py:
+To use analysis.py you must first run the motion.py script on each log file, this file can be found within the /Analysis folder. 
+For the motion.py file use : `python3 file_name` to process the logfile and the output should be a `motion_file.csv` file which will be used as input for the analysis.py script below.
+
+`python3 analysis.py <motion_file_1.csv> <motion_file_2.csv> ... <motion_file_N.csv>`
+
