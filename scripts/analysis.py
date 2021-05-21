@@ -14,9 +14,6 @@ MOTION1 = sys.argv[2]
 MOTION2 = sys.argv[3]
 MOTION3 = sys.argv[4]
 
-# a list of the three log files that we are currently using
-logFiles = ["03_SS_20210109.LOG", "06_ZS_20210109.LOG", "07_VS_20210109.LOG"]
-
 
 # step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
@@ -264,22 +261,24 @@ def motion_analysis(file):
 def merge_dataframe(motion1, motion2, motion3, prox_data):
     # converting to data frame where the first column is the keys of the dictionary and the second column is the data
     # so for example, dfMotions03 have timestamps as its first column and the motion data as second column
-    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['key', 'motion01'])
-    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['key', 'motion02'])
-    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['key', 'motion03'])
+    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['key', 'motion'+MOTION1[12:14]])
+    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['key', 'motion'+MOTION2[12:14]])
+    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['key', 'motion'+MOTION3[12:14]])
     df = pd.DataFrame(list(prox_data.items()), columns=['key', 'data'])
     df_merge = pd.merge(df, df_motion03, on=['key'])
     # merge the data frames on timestamps
     df_merge = pd.merge(df_merge, df_motion02, on=['key'])
     df_merge = pd.merge(df_merge, df_motion01, on=['key'])
     # write to output file
-    tfile = open('Merged1.txt', 'w+')
+    filename = 'Merged_' + DATAFILE[0:14] + ".txt"
+    tfile = open(filename, 'w+')
     tfile.write(df_merge.to_string())
     tfile.close()
 
 
 # first process log file by calling the two process functions
 mDict = process_single2(process_single1(DATAFILE))
+
 # then call sort_data_on_timestamp to reorganize the dictionaries so that the keys are timestamps
 sd = sort_data_on_timestamp(mDict)
 
