@@ -35,7 +35,8 @@ class SmoothedGroup:
         self.data.pop()
         self.stamps.pop()
         averageVal /= self.size
-        self.outfile.write(str(self.stamps[index])+"\t"+self.mote+"\t"+str(round((int(averageVal)/25.4/12), 2))+"\n")
+        # used to be int(averageVal)/25.4.12
+        self.outfile.write(str(self.stamps[index])+"\t"+self.mote+"\t"+str(round((int(averageVal)), 2))+"\n")
 
 
 
