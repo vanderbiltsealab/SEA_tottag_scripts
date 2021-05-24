@@ -1,5 +1,5 @@
-import pandas as pd
 import sys
+import pandas as pd
 
 # command line input: python logfile_name
 logfile = sys.argv[1]
