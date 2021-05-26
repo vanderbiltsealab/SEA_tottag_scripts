@@ -47,4 +47,4 @@ Refer to this website for details (https://pip.pypa.io/en/stable/installing/). P
 To use analysis.py you must first run the motion.py script on each log file, this file can be found within the /Analysis folder. 
 For the motion.py file use : `python3 motion.py file_name` to process the logfile and the output should be a `motion_file.csv` file which will be used as input for the analysis.py script below.
 
-`python3 analysis.py <motion_file_1.csv> <motion_file_2.csv> ... <motion_file_N.csv>`
+`python3 analysis.py logfile_name <motion_file_1.csv> <motion_file_2.csv> ... <motion_file_N.csv>`
