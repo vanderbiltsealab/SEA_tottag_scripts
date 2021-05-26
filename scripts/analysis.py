@@ -15,9 +15,11 @@ MOTION2 = sys.argv[3]
 MOTION3 = sys.argv[4]
 
 
-# step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
+# Step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
-def process_single1(script):
+# This function takes in two parameters, the first parameter is the log file name, the second parameter is used to keep
+# track of device tag (used for naming output files); the function returns a dictionary and a string(the device tag)
+def process_single1(script, d):
     mDict = {}
     with open(script) as f:
         # the following string operation gets the ID for the current device
@@ -26,6 +28,7 @@ def process_single1(script):
         if tag.strip():  # strip will remove all leading and trailing whitespace such as '\n' or ' ' by default
             tag = tag.strip("\n ' '")
             totTagID = tag.split()[6].split(',')[0]
+            d = totTagID[15:17]
         # start going through each line of the log file and separate in range and out of range data
         for line in f:
             # if line is not a comment
@@ -46,8 +49,7 @@ def process_single1(script):
                     # same as above;
                 else:
                     mDict.setdefault((tokens[1], totTagID), []).append((tokens[0], int(tokens[2]), False))
-    return mDict
-    # device2 & device1 | timestamp & proximity & 2ft?
+    return mDict, d
 
 
 # step 2 of processing - After filtering through the data for proximity data that is within checkin range,
@@ -258,26 +260,32 @@ def motion_analysis(file):
 
 # in this function we are passing in three motion file dictionaries that results from the motion_analysis() function
 # also passing in the dictionary that we obtained from analysing the logfile data
-def merge_dataframe(motion1, motion2, motion3, prox_data):
+def merge_dataframe(motion1, motion2, motion3, prox_data, d):
     # converting to data frame where the first column is the keys of the dictionary and the second column is the data
     # so for example, dfMotions03 have timestamps as its first column and the motion data as second column
-    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['key', 'motion'+MOTION1[12:14]])
-    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['key', 'motion'+MOTION2[12:14]])
-    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['key', 'motion'+MOTION3[12:14]])
+    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['key', 'motion'+MOTION1[0:2]])
+    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['key', 'motion'+MOTION2[0:2]])
+    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['key', 'motion'+MOTION3[0:2]])
     df = pd.DataFrame(list(prox_data.items()), columns=['key', 'data'])
     df_merge = pd.merge(df, df_motion03, on=['key'])
     # merge the data frames on timestamps
     df_merge = pd.merge(df_merge, df_motion02, on=['key'])
     df_merge = pd.merge(df_merge, df_motion01, on=['key'])
     # write to output file
-    filename = 'Merged_' + DATAFILE[0:14] + ".txt"
+    filename = 'Merged_' + d + ".txt"
     tfile = open(filename, 'w+')
     tfile.write(df_merge.to_string())
     tfile.close()
 
 
-# first process log file by calling the two process functions
-mDict = process_single2(process_single1(DATAFILE))
+device = ""
+
+# first call the first process function on the log file.
+# the function returns a list of 2 variables that are stored in "lst"
+# lst[0] is passed to the second process method, and lst[1] is used to name output files in later functions
+lst = process_single1(DATAFILE, device)
+mDict = process_single2(lst[0])
+device = lst[1]
 
 # then call sort_data_on_timestamp to reorganize the dictionaries so that the keys are timestamps
 sd = sort_data_on_timestamp(mDict)
@@ -288,4 +296,4 @@ motion02 = motion_analysis(MOTION2)
 motion03 = motion_analysis(MOTION3)
 
 # finally call the merge function to merge all the data
-merge_dataframe(motion01, motion02, motion03, sd)
+merge_dataframe(motion01, motion02, motion03, sd, device)
