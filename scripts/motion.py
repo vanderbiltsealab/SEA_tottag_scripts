@@ -5,11 +5,11 @@ import sys
 mot = [] # motion list
 times = [] # times list
 recording_device = 0
-logfile = sys.argv[1]
+LOGFILE = sys.argv[1]
 
 
 def find_motion(data, d_tag):
-    with open(logfile) as f:
+    with open(data) as f:
         # the following string operation gets the ID for the current device
         tag = f.readline()
         header = tag
@@ -35,7 +35,7 @@ def find_motion(data, d_tag):
 
 
 device_tag = ''
-lst = find_motion(logfile, device_tag)
+lst = find_motion(LOGFILE, device_tag)
 logfile_03 = lst[0]
-filename = lst[1] + '_motion.csv'
+filename = LOGFILE[:-4] + '_motion.csv'
 logfile_03.to_csv(filename, index=False)
