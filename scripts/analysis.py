@@ -272,7 +272,7 @@ def merge_dataframe(motion1, motion2, motion3, prox_data, d):
     df_merge = pd.merge(df_merge, df_motion02, on=['key'])
     df_merge = pd.merge(df_merge, df_motion01, on=['key'])
     # write to output file
-    # FIXME: filename = 'Merged_' + d + ".txt" - only device tag, no date
+    # FIXME: filename = 'Merged_' + d + ".txt" - only device tag, did not include date
     filename = DATAFILE[:-4] + "_merged.txt"
     tfile = open(filename, 'w+')
     tfile.write(df_merge.to_string())
