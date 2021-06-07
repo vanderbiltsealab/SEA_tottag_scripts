@@ -9,11 +9,15 @@ inRangeDist = 915  # 3ft = 915mm
 
 # argv is the array of command line arguments after 'python3' starting at index 0
 # the command line argument would be "python analysis.py DATAFILE Motion1 Motion2 Motion3"
-DATAFILE = sys.argv[1]
-MOTION1 = sys.argv[2]
-MOTION2 = sys.argv[3]
-MOTION3 = sys.argv[4]
+#DATAFILE = sys.argv[1]
+#MOTION1 = sys.argv[2]
+#MOTION2 = sys.argv[3]
+#MOTION3 = sys.argv[4]
 
+DATAFILE = "50@05-15.LOG"
+MOTION1 = "4A@05-15_motion.csv"
+MOTION2 = "50@05-15_motion.csv"
+MOTION3 = "51@05-15_motion.csv"
 
 # Step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
@@ -260,20 +264,20 @@ def motion_analysis(file):
 
 # in this function we are passing in three motion file dictionaries that results from the motion_analysis() function
 # also passing in the dictionary that we obtained from analysing the logfile data
-def merge_dataframe(motion1, motion2, motion3, prox_data, d):
+def merge_dataframe(motion1, motion2, motion3, prox_data):
     # converting to data frame where the first column is the keys of the dictionary and the second column is the data
     # so for example, dfMotions03 have timestamps as its first column and the motion data as second column
-    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['key', 'motion'+MOTION1[0:2]])
-    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['key', 'motion'+MOTION2[0:2]])
-    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['key', 'motion'+MOTION3[0:2]])
-    df = pd.DataFrame(list(prox_data.items()), columns=['key', 'data'])
-    df_merge = pd.merge(df, df_motion03, on=['key'])
+    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['timestamp', 'motion'+MOTION1[0:2]])
+    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['timestamp', 'motion'+MOTION2[0:2]])
+    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['timestamp', 'motion'+MOTION3[0:2]])
+    #df = pd.DataFrame(list(prox_data.items()), columns=['key', 'data'])
+    df_merge = pd.merge(prox_data, df_motion03, on=['timestamp'])
     # merge the data frames on timestamps
-    df_merge = pd.merge(df_merge, df_motion02, on=['key'])
-    df_merge = pd.merge(df_merge, df_motion01, on=['key'])
+    df_merge = pd.merge(df_merge, df_motion02, on=['timestamp'])
+    df_merge = pd.merge(df_merge, df_motion01, on=['timestamp'])
     # write to output file
     # FIXME: filename = 'Merged_' + d + ".txt" - only device tag, did not include date
-    filename = DATAFILE[:-4] + "_merged.txt"
+    filename = DATAFILE[:-4] + "-merged.txt"
     tfile = open(filename, 'w+')
     tfile.write(df_merge.to_string())
     tfile.close()
@@ -291,10 +295,39 @@ device = lst[1]
 # then call sort_data_on_timestamp to reorganize the dictionaries so that the keys are timestamps
 sd = sort_data_on_timestamp(mDict)
 
+# print to out file
+outfile = "check-sd"
+s = open(outfile, "w+")
+for key in sd:
+    s.write(str(key) + "\n")
+    for i in range(len(sd[key])):
+        s.write("\t" + str(sd[key][i]) + "\n")
+
+
+# reformat dictionary
+timestamp = []
+pair = []
+dist = []
+num = []
+for key in sd:
+    for i in range(len(sd[key])):
+        timestamp.append(key)
+        pair.append(sd[key][i][0])
+        dist.append(sd[key][i][1])
+        num.append(sd[key][i][2])
+
+# create dataframe
+outfile2 = "check-arrays"
+s2 = open(outfile2, "w+")
+d = {'timestamp': timestamp, 'Pair of Device': pair, 'Proximity': dist, 'Count': num}
+d = pd.DataFrame(d).sort_values(by=['timestamp'])
+# d.to_csv(outfile2, index=False)
+
+
 # call motion analysis on all three motions csv file to get three dictionaries of motion data
 motion01 = motion_analysis(MOTION1)
 motion02 = motion_analysis(MOTION2)
 motion03 = motion_analysis(MOTION3)
 
 # finally call the merge function to merge all the data
-merge_dataframe(motion01, motion02, motion03, sd, device)
+merge_dataframe(motion01, motion02, motion03, d)
