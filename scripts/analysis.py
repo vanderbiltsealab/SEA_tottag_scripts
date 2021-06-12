@@ -7,6 +7,11 @@ from sortedcontainers import SortedDict
 OUT_OF_RANGE_CODE = 999999
 inRangeDist = 915  # 3ft = 915mm
 
+#TODO: Separate device pair into two columns
+# 每一对device 从头开始数
+# 加一列true/false
+
+
 # argv is the array of command line arguments after 'python3' starting at index 0
 # the command line argument would be "python analysis.py DATAFILE Motion1 Motion2 Motion3"
 #DATAFILE = sys.argv[1]
@@ -270,17 +275,49 @@ def merge_dataframe(motion1, motion2, motion3, prox_data):
     df_motion01 = pd.DataFrame(list(motion1.items()), columns=['timestamp', 'motion'+MOTION1[0:2]])
     df_motion02 = pd.DataFrame(list(motion2.items()), columns=['timestamp', 'motion'+MOTION2[0:2]])
     df_motion03 = pd.DataFrame(list(motion3.items()), columns=['timestamp', 'motion'+MOTION3[0:2]])
-    #df = pd.DataFrame(list(prox_data.items()), columns=['key', 'data'])
-    df_merge = pd.merge(prox_data, df_motion03, on=['timestamp'])
     # merge the data frames on timestamps
+    df_merge = pd.merge(prox_data, df_motion03, on=['timestamp'])
     df_merge = pd.merge(df_merge, df_motion02, on=['timestamp'])
     df_merge = pd.merge(df_merge, df_motion01, on=['timestamp'])
     # write to output file
-    # FIXME: filename = 'Merged_' + d + ".txt" - only device tag, did not include date
-    filename = DATAFILE[:-4] + "-merged.txt"
-    tfile = open(filename, 'w+')
-    tfile.write(df_merge.to_string())
-    tfile.close()
+    filename = DATAFILE[:-4] + "-merged.csv"
+    df_merge.to_csv(filename, index=None)
+
+
+# a function used to print out a dictionary for checking purpose
+def print_to_outf(dict):
+    # print to out file
+    outfile = "check-dict"
+    s = open(outfile, "w+")
+    for key in dict:
+        s.write(str(key) + "\n")
+        for i in range(len(dict[key])):
+            s.write("\t" + str(dict[key][i]) + "\n")
+
+
+def reformat(sd):
+    # reformat dictionary
+    timestamp = []
+    device1 = []
+    device2 = []
+    dist = []
+    num = []
+    tf = []
+    for key in sd:
+        for i in range(len(sd[key])):
+            timestamp.append(key)
+            device1.append(sd[key][i][0][0])
+            device2.append(sd[key][i][0][1][:-1])
+            dist.append(sd[key][i][1])
+            num.append(sd[key][i][2])
+            tf.append(sd[key][i][3])
+
+    # create dataframe
+    # outfile2 = "check-arrays2"
+    # s2 = open(outfile2, "w+")
+    d = {'timestamp': timestamp, 'Device1': device1, 'Device2': device2, 'Proximity': dist, 'Count': num, 'T/F': tf}
+    d = pd.DataFrame(d).sort_values(by=['timestamp'])
+    return d
 
 
 device = ""
@@ -295,35 +332,8 @@ device = lst[1]
 # then call sort_data_on_timestamp to reorganize the dictionaries so that the keys are timestamps
 sd = sort_data_on_timestamp(mDict)
 
-# print to out file
-outfile = "check-sd"
-s = open(outfile, "w+")
-for key in sd:
-    s.write(str(key) + "\n")
-    for i in range(len(sd[key])):
-        s.write("\t" + str(sd[key][i]) + "\n")
-
-
-# reformat dictionary
-timestamp = []
-pair = []
-dist = []
-num = []
-for key in sd:
-    for i in range(len(sd[key])):
-        timestamp.append(key)
-        pair.append(sd[key][i][0])
-        dist.append(sd[key][i][1])
-        num.append(sd[key][i][2])
-
-# create dataframe
-outfile2 = "check-arrays"
-s2 = open(outfile2, "w+")
-d = {'timestamp': timestamp, 'Pair of Device': pair, 'Proximity': dist, 'Count': num}
-d = pd.DataFrame(d).sort_values(by=['timestamp'])
-# d.to_csv(outfile2, index=False)
-
-
+# reformat
+d = reformat(sd)
 # call motion analysis on all three motions csv file to get three dictionaries of motion data
 motion01 = motion_analysis(MOTION1)
 motion02 = motion_analysis(MOTION2)
