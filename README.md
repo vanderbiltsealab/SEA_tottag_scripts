@@ -32,17 +32,13 @@ Now, your data is ready to go, and you can begin running the tottagStats.py scri
 
 ## scripts/analysis.py
 ### this code is currently being developed by the Spring 2021 data analysis team led by Dr. Virginia Salo
-to use `analysis.py` run:
+to use `analysis.py` run: 
 
-
-### How to install sortedcontainers library needed in analysis.py
-`pip3 install sortedcontainers` 
-
-### Before you install pandas, make sure you have pip installed
+### Before you install libraries, make sure you have pip installed
 Refer to this website for details (https://pip.pypa.io/en/stable/installing/). Pip should already be installed with installation of python but to be sure, run `pip -V` to check which version you are running.
 
-### How to install pandas library needed in analysis.py
-`pip install pandas`
+### How to install libraries needed in `analysis.py`
+`pip install -r requirements.txt`
 
 ### Usage of analysis.py:
 To use analysis.py you must first run the motion.py script on each log file, this file can be found within the /Analysis folder. 
