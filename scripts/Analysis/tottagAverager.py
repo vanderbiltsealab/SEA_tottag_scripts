@@ -26,7 +26,8 @@ for i in logs:
             tag = tag.split()[6].split(',')[0]
         sd = SortedDict()
         for line in f:
-            if line[0] != '#':
+            # if line is not a comment, or if line does not contain any hashtags
+            if line[0] != '#' and line.find('#') == -1:
                 tokens = line.split('\t')
                 if (int(tokens[2]) != OUT_OF_RANGE_CODE):
                     if (int(tokens[0]) >= int(vals[0]) and int(tokens[0]) <= int(vals[1])):
@@ -39,7 +40,8 @@ for i in logs:
                         find = find.strip("\n ' '")
                         find = find.split()[6].split(',')[0]
                     for row in w:
-                        if row[0] != '#':
+                        # if line is not a comment, or if line does not contain any hashtags
+                        if row[0] != '#' and row.find('#') == -1:
                             token = row.split('\t')
                             if (token[1] == tag):
                                 if (int(token[2]) != OUT_OF_RANGE_CODE):

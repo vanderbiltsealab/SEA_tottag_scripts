@@ -1,6 +1,7 @@
 import os
 import sys
 
+
 #class to handle the moving average.
 #works kind of like a queue, keeping smoothVal values stored
 class SmoothedGroup:
@@ -57,10 +58,10 @@ for i in logs:
     with open(i) as f:
         s.write(f.readline())
         for line in f:
-            if line[0] != '#':
+            if line[0] != '#' and line.fine('#') == -1:
                 tokens = line.split('\t')
-                #this if only operates on the first recording from each mote.
-                #serves to initialize the class
+                # this if only operates on the first recording from each mote.
+                # serves to initialize the class
                 if (first.setdefault(tokens[1], True) and int(tokens[2]) != OUT_OF_RANGE_CODE):
                     classDict[tokens[1]] = classDict.setdefault(tokens[1], SmoothedGroup(int(tokens[0]), tokens[1], int(tokens[2]), smoothVal, s))
                     first[tokens[1]] = False
