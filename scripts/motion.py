@@ -37,5 +37,5 @@ def find_motion(data, d_tag):
 device_tag = ''
 lst = find_motion(LOGFILE, device_tag)
 logfile_03 = lst[0]
-filename = LOGFILE[:-4] + '_motion.csv'
+filename = LOGFILE[:-4] + '-motion.csv'
 logfile_03.to_csv(filename, index=False)
