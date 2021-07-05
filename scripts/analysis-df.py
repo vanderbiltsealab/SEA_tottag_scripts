@@ -13,40 +13,44 @@ MOTION1 = "4A@05-15-motion.csv"
 MOTION2 = "50@05-15-motion.csv"
 MOTION3 = "51@05-15-motion.csv"
 
-
-df = pd.read_csv(DATAFILE, comment="#", names=["timestamp", "device", "dist"], sep="\t")
+# read in log file to data frame
+df = pd.read_csv(DATAFILE, comment="#", names=["timestamp", "Device", "distance"], sep="\t")
+# FIXME: delete this later
 df.to_csv("checkcheck", index=None)
-df["dist"] = pd.to_numeric(df["dist"])
+# convert the 'distance' column to numeric values
+df["distance"] = pd.to_numeric(df["distance"])
 
-def convert(b):
-    if b:
-        return 1
-    else:
-        return 0
-
-
-# this works like filter
-device1_df = df.query('device=="c0:98:e5:42:00:50"')
-
-
-# iterate through column
+# iterate through 'device' column and get a list of all the devices
 device_lst = []
-for device in df['device']:
-    print(device)
+for device in df['Device']:
     if device not in device_lst:
         device_lst.append(device)
 
-# assign new col
-device1_df = device1_df.assign(in_range=0)
+# create a list of data frames
+df_lst = []
+# create a data frame for each device
+for device in device_lst:
+    df_lst.append(df[df.Device == device])
 
-# a couple of ways to convert from true/false to 1/0
-# 1. replace for whole data frame
-# device1_df = device1_df.replace({True: 1, False: 0})
-# 2. loc
-device1_df.loc[df.dist < 915, 'in_range'] = 1
-device1_df.loc[df.dist >= 915, 'in_range'] = 0
-# 3. apply
-# device1_df["in_range"] = df.apply(lambda row: row["dist"] < 915, axis=1).astype(int)
 
-device1_df.to_csv("d1")
+# this works like filter
+# device[0] = df.query('Device=="c0:98:e5:42:00:50"')
+
+# add a new column to end of data frame called 'in_range'
+for df in df_lst:
+    df = df.assign(in_range=0)
+
+# if within touching range, 'in_range' is 1, otherwise 0
+for df in df_lst:
+    # a couple of ways to convert from true/false to 1/0
+    # 1. replace for whole data frame
+    # device1_df = device1_df.replace({True: 1, False: 0})
+    # 2. loc
+    # device1_df.loc[df.dist < 915, 'in_range'] = 1
+    # device1_df.loc[df.dist >= 915, 'in_range'] = 0
+    # 3. apply
+    df["in_range"] = df.apply(lambda row: row["distance"] < 915, axis=1).astype(int)
+
+# out to csv
+df_lst[1].to_csv("d1", index=None)
 
