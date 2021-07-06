@@ -2,24 +2,25 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-from sortedcontainers import SortedDict
-# documentation on sortedContainers: http://www.grantjenks.com/docs/sortedcontainers/
+
 # some variables
 OUT_OF_RANGE_CODE = 999999
 inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 
-# DATAFILE = sys.argv[1]
-# MOTION1 = sys.argv[2]
-# MOTION2 = sys.argv[3]
-# MOTION3 = sys.argv[4]
-# MOTION = sys.argv[2:]
+# DATAFILE is the first input variable
+DATAFILE = sys.argv[1]
+# MOTION is a list of however many motion file that the user input
+MOTION = sys.argv[2:]
 
-DATAFILE = "4A@05-15.LOG"
-MOTION = ["4A@05-15-motion.csv", "50@05-15-motion.csv", "51@05-15-motion.csv"]
-MOTION1 = "4A@05-15-motion.csv"
-MOTION2 = "50@05-15-motion.csv"
-MOTION3 = "51@05-15-motion.csv"
+# DATAFILE = "4A@05-15.LOG"
+# MOTION = ["4A@05-15-motion.csv", "50@05-15-motion.csv", "51@05-15-motion.csv"]
+
+# get list device tags of the devices in motion files
+# used for naming columns later
+motion_name = []
+for file_name in MOTION:
+    motion_name.append(file_name[0:2])
 
 # get device id
 with open(DATAFILE) as f:
@@ -40,38 +41,30 @@ for device in df['Other_Device']:
 # create a list of data frames
 df_lst = []
 
-# create a data frame for each device
+# create a data frame for each device pair
 for device in device_lst:
     df_lst.append(df[df.Other_Device == device])
 
-
-# this works like filter
-# device[0] = df.query('Device=="c0:98:e5:42:00:50"')
-
-# add a new column to end of data frame called 'in_range'
+# add a new column to end of each data frame called 'in_range'
+# initialize all values to 0
 for df in df_lst:
     df = df.assign(in_range=0)
 
-# if within touching range, 'in_range' is 1, otherwise 0
-for df in df_lst:
-    # a couple of ways to convert from true/false to 1/0
-    # 1. replace for whole data frame
-    # device1_df = device1_df.replace({True: 1, False: 0})
-    # 2. loc
-    # device1_df.loc[df.dist < 915, 'in_range'] = 1
-    # device1_df.loc[df.dist >= 915, 'in_range'] = 0
-    # 3. apply
-    # df["in_range"] = df.apply(lambda row: row["distance"] < 915, axis=1).astype(int)
-
-    df["in_range"] = df.apply(lambda row: row["distance"] < 915, axis=1)
-    df.insert(1, "Device", device_id)
-
-
+# Use these variables to keep track of index of the columns
 timestamp_col = 0
-device_col = 1
 other_device_col = 2
 dist_col = 3
 in_range_col = 4
+
+# loop through list of data frames and do a lot of things
+for df in df_lst:
+
+    # if within touching range, 'in_range' is 1, otherwise 0
+    df["in_range"] = df.apply(lambda row: row["distance"] < inRangeDist, axis=1)
+
+    # insert a column at col index 1 called Device
+    # values of this column are the device id of THIS device
+    df.insert(1, "Device", device_id)
 
 
 for df in df_lst:
@@ -90,31 +83,46 @@ for df in df_lst:
 
     # variables used for loop below
     index = 0
-    check_num = 0
+    check_num = 0  # keep the count of the number of checkins
 
-    # add in check_in count to the check_in array
+    # modify check_in array so that it shows the right check_num
     while index in range(len(timestamp)):
-        print(check_num)
+        # check if within checkin range
         if in_range[index]:
+
+            # t keeps track of current timestamp
             t = int(timestamp[index])
 
+            # initialize some variables
             count = 1
             tmpT = t
             i = index
-            first = True
+            first = True  # whether this is the beginning of a potential checkin
             add_to_beginning = False
             check_num_update = False
 
+            # if within checkin range for next consecutive timestamp
             while index != len(timestamp) - 1 and in_range[index + 1] and (tmpT + 1) == int(timestamp[index + 1]):
+
                 count = count + 1
+
+                # if this is the beginning of a potential checkin, keep track of this index
                 if first:
                     track_beginning = i
                     first = False
+
+                # if we have 2 consecutive seconds within checkin range, update check_in array
                 if count >= 2:
+
+                    # if check_num have not been updated, update it
                     if not check_num_update:
                         check_num = check_num + 1
                         check_num_update = True
+
+                    # update check_in array
                     check_in[index + 1] = check_num
+
+                    # the check_in val at the start timestamp of the checkin need to be updated
                     if not add_to_beginning:
                         check_in[track_beginning] = check_num
                         add_to_beginning = True
@@ -125,45 +133,76 @@ for df in df_lst:
             index = index + 1
 
     # append a new 'check_in' col to data frame
+    # content of this column is the values of the check_in array
     df["check_in"] = check_in
-    print(len(timestamp), len(check_in))
 
+# out to csv for debugging purposes
+# df_lst[0].to_csv("d1", sep="\t")
+# df_lst[1].to_csv("d2", sep="\t")
+# df_lst[2].to_csv("d3", sep="\t")
 
-df_lst[0].to_csv("d1", sep="\t")
-df_lst[1].to_csv("d2", sep="\t")
-df_lst[2].to_csv("d3", sep="\t")
-
+# concat data frames for pairs of devices
 whole = pd.concat(df_lst)
+# sort values of the new, big data frame by timestamp
 whole = pd.DataFrame(whole).sort_values(by=['timestamp'])
+# remove empty(NA) values
 whole.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
 
-# get all timestamps
+
+# -----From here, we will start to add in motions data...----------
+# get all timestamps the is recorded in DATAFILE and put them into an array
 all_timestamp = []
 for i in range(len(whole.index)):
     all_timestamp.append(whole.iloc[[i], [0]].values[0][0])
 
+# create a list to hold data frames for all motions files
+# one data frame will be created for each motions file
 motion_lst = []
-count = 1
+# count is a variable used to access index of the
+# 'motion_name' array at the beginning
+count = 0
+# loop through the list of motion files the user entered
+# create a data frame for each one
 for motion_file in MOTION:
     motion_lst.append(pd.read_csv(motion_file, comment="T",
-                                  names=["timestamp", "motion"+str(count), "Other_Device"], sep=","))
+                                  names=["timestamp", "motion"+str(motion_name[count]), "Other_Device"], sep=","))
     count += 1
 
+# create a data frame of timestamps using the previously obtained 'all_timestamp' array
 time = pd.DataFrame(all_timestamp, columns=["timestamp"])
+# start to process motion data and merge with proximity data
 merged = whole
-count = 1
+# count is still used for accessing name list and name columns
+count = 0
+# go through the motion data frames in the list
 for df in motion_lst:
+
+    # merge the 'time' data frame with motion data frame
+    # we are merging on 'timestamp' column
+    # "outer" means that we are doing an exclusive merge
     df = pd.merge(time, df, on=["timestamp"], how="outer")
+
+    # since we only have motions data for times when motion changed, need to fill in missing motions data
+    # "ffill" allow us to do a forward filling; fill empty space with the latest known value
     df.fillna(method="ffill", inplace=True)
+
+    # delete unnecessary columnn
     del df["Other_Device"]
-    df = df.drop_duplicates(subset=['timestamp']).dropna(subset=['motion'+str(count)])
+
+    # drop_duplicates: there were duplicate timestamps, so we want to remove them
+    # dropna: this remove NA values
+    df = df.drop_duplicates(subset=['timestamp']).dropna(subset=['motion'+str(motion_name[count])])
+
+    # convert data type to int
+    # (if we do not do this, motion data value would be floating point type)
     df = pd.DataFrame.astype(self=df, dtype=int)
+
+    # merge motion data to previous data frame,
+    # this will add a motions column to end of original data frame
     merged = pd.merge(merged, df, on=['timestamp'])
+
     count += 1
 
-
-merged.to_csv("merged", sep="\t")
-print(len(df_lst[0].index))
-print(len(df_lst[1].index))
-print(len(df_lst[2].index))
-print(len(whole.index))
+# out file
+outf_name = DATAFILE[:-4] + "-merged.csv"
+merged.to_csv(outf_name, sep="\t")
