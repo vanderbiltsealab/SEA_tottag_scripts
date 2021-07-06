@@ -7,26 +7,22 @@ from sortedcontainers import SortedDict
 OUT_OF_RANGE_CODE = 999999
 inRangeDist = 915  # 3ft = 915mm
 
+#TODO: Separate device pair into two columns
+# 每一对device 从头开始数
+# 加一列true/false
+
 
 # argv is the array of command line arguments after 'python3' starting at index 0
 # the command line argument would be "python analysis.py DATAFILE Motion1 Motion2 Motion3"
-DATAFILE = sys.argv[1]
-MOTION1 = sys.argv[2]
-MOTION2 = sys.argv[3]
-MOTION3 = sys.argv[4]
+#DATAFILE = sys.argv[1]
+#MOTION1 = sys.argv[2]
+#MOTION2 = sys.argv[3]
+#MOTION3 = sys.argv[4]
 
-#DATAFILE = "03_SS_20210109.LOG"
-#MOTION1 = "03_motions.csv"
-#MOTION2 = "06_motions.csv"
-#MOTION3 = "07_motions.csv"
-
-timestamp = []
-device1 = []
-device2 = []
-dist = []
-num = []
-tf = []
-
+DATAFILE = "50@05-15.LOG"
+MOTION1 = "4A@05-15-motion.csv"
+MOTION2 = "50@05-15-motion.csv"
+MOTION3 = "51@05-15-motion.csv"
 
 # Step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
@@ -44,26 +40,25 @@ def process_single1(script, s, e):
         # start going through each line of the log file and separate in range and out of range data
         for line in f:
             # if line is not a comment
-            if line[0] != '#' and line.find('#') == -1:
+            if line[0] != '#' and line.find("#") == -1:
                 # tokens is a list where tokens[0] is timestamp, tokens[1] is device ID, and tokens[2] is measurement
                 # the list is obtained by calling the split function on the string, in this case the function will split
                 # line based on tabs
+
                 tokens = line.split('\t')
 
-                # check that the timestamp is within the common time window
-                if s <= int(tokens[0]) <= e:
-                    # check for out of range code (999999)
-                    # if int(tokens[2]) != OUT_OF_RANGE_CODE:
-                    # if proximity data is within check in range (3ft/915mm)
-                    if int(tokens[2]) <= inRangeDist:
-                        # use the setdefault function that initialize an array if the key has not yet been
-                        # add into the dictionary, or append to the end of the array if the key already exists
-                        # each key is associated with an array of tuples that has the form -
-                        # (timestamp, distance, boolean value of whether in checkin range)
-                        mDict.setdefault((tokens[1], totTagID), []).append((tokens[0], int(tokens[2]), True))
-                        # same as above;
-                    else:
-                        mDict.setdefault((tokens[1], totTagID), []).append((tokens[0], int(tokens[2]), False))
+                # check for out of range code (999999)
+                # if int(tokens[2]) != OUT_OF_RANGE_CODE:
+                # if proximity data is within check in range (3ft/915mm)
+                if s <= int(tokens[0]) <= e and int(tokens[2]) <= inRangeDist:
+                    # use the setdefault function that initialize an array if the key has not yet been
+                    # add into the dictionary, or append to the end of the array if the key already exists
+                    # each key is associated with an array of tuples that has the form -
+                    # (timestamp, distance, boolean value of whether in checkin range)
+                    mDict.setdefault((tokens[1], totTagID), []).append((tokens[0], int(tokens[2]), True))
+                    # same as above;
+                else:
+                    mDict.setdefault((tokens[1], totTagID), []).append((tokens[0], int(tokens[2]), False))
     return mDict
 
 
@@ -97,7 +92,7 @@ def process_single2(mDict):
                 # measurements within 3ft
                 count = 1
                 # keep a tmp variable for the current timestamp and index of the current tuple
-                # tmpT = t
+                tmpT = t
                 i = index
                 # first is a boolean value that indicates whether this timestamp is the start of the
                 # checkin period (first timestamp in the series of consecutive timestamps)
@@ -113,8 +108,8 @@ def process_single2(mDict):
                 # 2. whether we are at the end of the list; 3. whether
                 # mDict[key][index][2] is the boolean value that indicates whether proximity measurement is within
                 # 3ft;
-                while mDict[key][index][2] and index != len(mDict[key]) - 1:
-                    # and (tmpT + 1) == int(mDict[key][index + 1][0]):
+                while mDict[key][index][2] and index != len(mDict[key]) - 1 \
+                        and (tmpT + 1) == int(mDict[key][index + 1][0]):
                     # if this is the first timestamp in the consecutive series, let the trackBeginning variable
                     # store the index of the start of this checkin period (the starting timestamp)
                     if first:
@@ -136,7 +131,7 @@ def process_single2(mDict):
                     # increment by 1
                     count = count + 1
                     index = index + 1
-                    # tmpT = tmpT + 1
+                    tmpT = tmpT + 1
                 index = index + 1
             # if not in checkin range, just go to next index (next tuple)
             else:
@@ -175,7 +170,7 @@ def motion_analysis(file):
             # device = (tokens[2].split("\n"))[0]
 
             time_array.append(time)
-        # print(len(time_array))
+        #  print(len(time_array))
         # print(time_array[0])  # type str
 
     # this is where we will be comparing timestamps and will need time_array as a reference array for help ^^^^^^
@@ -200,7 +195,6 @@ def motion_analysis(file):
             checking if time+1 is not present then insert a new array that looks like this:
             (timestamp+1, device, motion), where motion is 0 or 1
             then insert this array pattern into sdMotion until time+1 is present or lines run out.
-
             1) figure out what the first line is (this is either motion 1 or 0
             first need to figure out how to tell what the next line will be:
             what we could do is get an array of timestamps before our processing begins => reference array (time_array)
@@ -278,9 +272,9 @@ def motion_analysis(file):
 def merge_dataframe(motion1, motion2, motion3, prox_data):
     # converting to data frame where the first column is the keys of the dictionary and the second column is the data
     # so for example, dfMotions03 have timestamps as its first column and the motion data as second column
-    df_motion01 = pd.DataFrame((motion1.items()), columns=['timestamp', 'motion'+MOTION1[0:2]])
-    df_motion02 = pd.DataFrame((motion2.items()), columns=['timestamp', 'motion'+MOTION2[0:2]])
-    df_motion03 = pd.DataFrame((motion3.items()), columns=['timestamp', 'motion'+MOTION3[0:2]])
+    df_motion01 = pd.DataFrame(list(motion1.items()), columns=['timestamp', 'motion'+MOTION1[0:2]])
+    df_motion02 = pd.DataFrame(list(motion2.items()), columns=['timestamp', 'motion'+MOTION2[0:2]])
+    df_motion03 = pd.DataFrame(list(motion3.items()), columns=['timestamp', 'motion'+MOTION3[0:2]])
     # merge the data frames on timestamps
     df_merge = pd.merge(prox_data, df_motion03, on=['timestamp'])
     df_merge = pd.merge(df_merge, df_motion02, on=['timestamp'])
@@ -301,7 +295,6 @@ def print_to_outf(dict):
             s.write("\t" + str(dict[key][i]) + "\n")
 
 
-# this function is used for reformatting the data to create a dataframe with proper columns
 def reformat(sd):
     # reformat dictionary
     timestamp = []
@@ -313,8 +306,8 @@ def reformat(sd):
     for key in sd:
         for i in range(len(sd[key])):
             timestamp.append(key)
-            device2.append(sd[key][i][0][0])
-            device1.append(sd[key][i][0][1])
+            device1.append(sd[key][i][0][0])
+            device2.append(sd[key][i][0][1][:-1])
             dist.append(sd[key][i][1])
             num.append(sd[key][i][2])
             tf.append(sd[key][i][3])
@@ -322,21 +315,23 @@ def reformat(sd):
     # create dataframe
     # outfile2 = "check-arrays2"
     # s2 = open(outfile2, "w+")
-    d = {'timestamp': timestamp, 'Device1': device1, 'Device2': device2, 'Proximity': dist, 'Count': num, 'Checkin_Occurred': tf}
+    d = {'timestamp': timestamp, 'Device1': device1, 'Device2': device2, 'Proximity': dist, 'Count': num, 'T/F': tf}
     d = pd.DataFrame(d).sort_values(by=['timestamp'])
     return d
 
 
+device = ""
 # call motion analysis on all three motions csv file to get three dictionaries of motion data
 motion01 = motion_analysis(MOTION1)
 motion02 = motion_analysis(MOTION2)
 motion03 = motion_analysis(MOTION3)
 
-# find the start and end value of the time window common in all three motion files
 start = max(motion01.keys()[0], motion02.keys()[0], motion03.keys()[0])
 end = min(motion01.keys()[-1], motion02.keys()[-1], motion03.keys()[-1])
 
 # first call the first process function on the log file.
+# the function returns a list of 2 variables that are stored in "lst"
+# lst[0] is passed to the second process method, and lst[1] is used to name output files in later functions
 mDict = process_single2(process_single1(DATAFILE, start, end))
 
 # then call sort_data_on_timestamp to reorganize the dictionaries so that the keys are timestamps
