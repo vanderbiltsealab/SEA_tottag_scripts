@@ -7,22 +7,17 @@ from sortedcontainers import SortedDict
 OUT_OF_RANGE_CODE = 999999
 inRangeDist = 915  # 3ft = 915mm
 
-#TODO: Separate device pair into two columns
-# 每一对device 从头开始数
-# 加一列true/false
-
-
 # argv is the array of command line arguments after 'python3' starting at index 0
 # the command line argument would be "python analysis.py DATAFILE Motion1 Motion2 Motion3"
-#DATAFILE = sys.argv[1]
-#MOTION1 = sys.argv[2]
-#MOTION2 = sys.argv[3]
-#MOTION3 = sys.argv[4]
+DATAFILE = sys.argv[1]
+MOTION1 = sys.argv[2]
+MOTION2 = sys.argv[3]
+MOTION3 = sys.argv[4]
 
-DATAFILE = "50@05-15.LOG"
-MOTION1 = "4A@05-15-motion.csv"
-MOTION2 = "50@05-15-motion.csv"
-MOTION3 = "51@05-15-motion.csv"
+#DATAFILE = "50@05-15.LOG"
+#MOTION1 = "4A@05-15-motion.csv"
+#MOTION2 = "50@05-15-motion.csv"
+#MOTION3 = "51@05-15-motion.csv"
 
 # Step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
