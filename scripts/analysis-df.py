@@ -72,7 +72,7 @@ other_device_col = 2
 dist_col = 3
 in_range_col = 4
 
-
+"""
 timestamp = []
 in_range = []
 
@@ -118,8 +118,67 @@ while index in range(len(timestamp)):
         index = index + 1
 
 df_lst[0]["check_in"] = check_in
+"""
 
-print(check_in)
 df_lst[0].to_csv("d1", sep="\t")
 # df_lst[1].to_csv("d2", sep="\t")
 # df_lst[2].to_csv("d3", sep="\t")
+
+
+for df in df_lst:
+
+    # init two arrays to hold values
+    timestamp = []
+    in_range = []
+
+    # go through data frame and put data in 'timestamp' and 'in_range' column into arrays
+    for j in range(len(df)):
+        timestamp.append(df.iloc[[j], [timestamp_col]].values[0][0])
+        in_range.append(df.iloc[[j], [in_range_col]].values[0][0])
+
+    # fill the check_in array(same lengths as timestamp) with -1s
+    check_in = [-1 for i in range(len(timestamp))]
+
+    # variables used for loop below
+    index = 0
+    check_num = 0
+
+    # add in check_in count to the check_in array
+    while index in range(len(timestamp)):
+        print(check_num)
+        if in_range[index]:
+            t = int(timestamp[index])
+
+            count = 1
+            tmpT = t
+            i = index
+            first = True
+            add_to_beginning = False
+            check_num_update = False
+
+            while index != len(timestamp) - 1 and in_range[index + 1] and (tmpT + 1) == int(timestamp[index + 1]):
+                count = count + 1
+                if first:
+                    track_beginning = i
+                    first = False
+                if count >= 2:
+                    if not check_num_update:
+                        check_num = check_num + 1
+                        check_num_update = True
+                    check_in[index + 1] = check_num
+                    if not add_to_beginning:
+                        check_in[track_beginning] = check_num
+                        add_to_beginning = True
+                index = index + 1
+                tmpT = tmpT + 1
+            index = index + 1
+        else:
+            index = index + 1
+
+    # append a new 'check_in' col to data frame
+    df["check_in"] = check_in
+
+
+df_lst[0].to_csv("d1", sep="\t")
+df_lst[1].to_csv("d2", sep="\t")
+df_lst[2].to_csv("d3", sep="\t")
