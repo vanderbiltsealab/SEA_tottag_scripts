@@ -1,7 +1,6 @@
 import os
 import sys
 import pandas as pd
-import numpy as np
 
 # some variables
 OUT_OF_RANGE_CODE = 999999

@@ -14,10 +14,10 @@ MOTION1 = sys.argv[2]
 MOTION2 = sys.argv[3]
 MOTION3 = sys.argv[4]
 
-#DATAFILE = "50@05-15.LOG"
-#MOTION1 = "4A@05-15-motion.csv"
-#MOTION2 = "50@05-15-motion.csv"
-#MOTION3 = "51@05-15-motion.csv"
+# DATAFILE = "4A@05-15.LOG"
+# MOTION1 = "4A@05-15-motion.csv"
+# MOTION2 = "50@05-15-motion.csv"
+# MOTION3 = "51@05-15-motion.csv"
 
 # Step 1 of processing log file - creating dictionaries with the tuple (device 2, device1) as key, key is associated
 # with arrays of tuples that has the form (timestamp, proximity, within 2 ft or not(boolean value))
@@ -276,13 +276,13 @@ def merge_dataframe(motion1, motion2, motion3, prox_data):
     df_merge = pd.merge(df_merge, df_motion01, on=['timestamp'])
     # write to output file
     filename = DATAFILE[:-4] + "-merged.csv"
-    df_merge.to_csv(filename, index=None)
+    df_merge.to_csv(filename, index=None, sep="\t")
 
 
 # a function used to print out a dictionary for checking purpose
 def print_to_outf(dict):
     # print to out file
-    outfile = "check-dict"
+    outfile = "motion_ana"
     s = open(outfile, "w+")
     for key in dict:
         s.write(str(key) + "\n")
