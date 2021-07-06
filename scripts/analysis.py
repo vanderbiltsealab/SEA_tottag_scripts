@@ -103,10 +103,11 @@ def process_single2(mDict):
                 # 2. whether we are at the end of the list; 3. whether
                 # mDict[key][index][2] is the boolean value that indicates whether proximity measurement is within
                 # 3ft;
-                while mDict[key][index][2] and index != len(mDict[key]) - 1 \
+                while mDict[key][index + 1][2] and index != len(mDict[key]) - 1 \
                         and (tmpT + 1) == int(mDict[key][index + 1][0]):
                     # if this is the first timestamp in the consecutive series, let the trackBeginning variable
                     # store the index of the start of this checkin period (the starting timestamp)
+                    count += 1
                     if first:
                         trackBeginning = i
                         first = False
@@ -117,14 +118,13 @@ def process_single2(mDict):
                             check_num = check_num + 1
                             checknumUpdate = True
                         # append check_num to original array
-                        mDict[key][index] = mDict[key][index] + (check_num,)
+                        mDict[key][index + 1] = mDict[key][index] + (check_num,)
                         # this is appending check_num to the first timestamp in the sequence (we did not append
                         # check_num to the first tuple of this checkin because count was 1 by then)
                         if not addToBeginning:
                             mDict[key][trackBeginning] = mDict[key][trackBeginning] + (check_num,)
                             addToBeginning = True
                     # increment by 1
-                    count = count + 1
                     index = index + 1
                     tmpT = tmpT + 1
                 index = index + 1
