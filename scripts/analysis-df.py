@@ -8,12 +8,12 @@ inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 
 # DATAFILE is the first input variable
-DATAFILE = sys.argv[1]
+# DATAFILE = sys.argv[1]
 # MOTION is a list of however many motion file that the user input
-MOTION = sys.argv[2:]
+# MOTION = sys.argv[2:]
 
-# DATAFILE = "4A@05-15.LOG"
-# MOTION = ["4A@05-15-motion.csv", "50@05-15-motion.csv", "51@05-15-motion.csv"]
+DATAFILE = "4F@03-20.LOG"
+MOTION = ["4F@03-20-motion.csv", "50@03-20-motion.csv", "51@03-20-motion.csv"]
 
 # get list device tags of the devices in motion files
 # used for naming columns later
@@ -26,7 +26,7 @@ with open(DATAFILE) as f:
     tag = f.readline()
     if tag.strip():
         tag = tag.strip("\n ' '")
-        device_id = tag.split()[6].split(',')[0][:-1]
+        device_id = tag.split()[6].split(',')[0]
 
 # read in log file to data frame
 df = pd.read_csv(DATAFILE, comment="#", names=["timestamp", "Other_Device", "distance"], sep="\t")
@@ -78,11 +78,11 @@ for df in df_lst:
         in_range.append(df.iloc[[j], [in_range_col]].values[0][0])
 
     # fill the check_in array(same lengths as timestamp) with -1s
-    check_in = [-1 for i in range(len(timestamp))]
+    check_in = [0 for i in range(len(timestamp))]
 
     # variables used for loop below
     index = 0
-    check_num = 0  # keep the count of the number of checkins
+    check_num = 1  # keep the count of the number of checkins
 
     # modify check_in array so that it shows the right check_num
     while index in range(len(timestamp)):
@@ -98,7 +98,7 @@ for df in df_lst:
             i = index
             first = True  # whether this is the beginning of a potential checkin
             add_to_beginning = False
-            check_num_update = False
+            # check_num_update = False
 
             # if within checkin range for next consecutive timestamp
             while index != len(timestamp) - 1 and in_range[index + 1] and (tmpT + 1) == int(timestamp[index + 1]):
@@ -112,11 +112,6 @@ for df in df_lst:
 
                 # if we have 2 consecutive seconds within checkin range, update check_in array
                 if count >= 2:
-
-                    # if check_num have not been updated, update it
-                    if not check_num_update:
-                        check_num = check_num + 1
-                        check_num_update = True
 
                     # update check_in array
                     check_in[index + 1] = check_num
@@ -149,10 +144,6 @@ whole.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
 
 
 # -----From here, we will start to add in motions data...----------
-# get all timestamps the is recorded in DATAFILE and put them into an array
-all_timestamp = []
-for i in range(len(whole.index)):
-    all_timestamp.append(whole.iloc[[i], [0]].values[0][0])
 
 # create a list to hold data frames for all motions files
 # one data frame will be created for each motions file
@@ -166,6 +157,20 @@ for motion_file in MOTION:
     motion_lst.append(pd.read_csv(motion_file, comment="T",
                                   names=["timestamp", "motion"+str(motion_name[count]), "Other_Device"], sep=","))
     count += 1
+
+# start_lst is a list of all the start values of the motion files
+start_lst = []
+end_lst = []
+
+# go through motion data frames and get start and end values
+for motion_df in motion_lst:
+    start_lst.append(motion_df.iloc[[0], [0]].values[0][0])
+    end_lst.append(motion_df.iloc[[len(motion_df.index) - 1], [0]].values[0][0])
+
+
+# all_timestamp is all the timestamps from the smallest start value to largest end value
+all_timestamp = list(range(min(start_lst), max(end_lst), 1))
+
 
 # create a data frame of timestamps using the previously obtained 'all_timestamp' array
 time = pd.DataFrame(all_timestamp, columns=["timestamp"])
@@ -201,6 +206,9 @@ for df in motion_lst:
     merged = pd.merge(merged, df, on=['timestamp'])
 
     count += 1
+
+# remove in-range col, not needed in final result
+del merged["in_range"]
 
 # out file
 outf_name = DATAFILE[:-4] + "-merged.csv"
