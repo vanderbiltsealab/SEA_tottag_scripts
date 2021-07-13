@@ -45,3 +45,16 @@ To use analysis.py you must first run the motion.py script on each log file, thi
 For the motion.py file use : `python3 motion.py file_name` to process the logfile and the output should be a `motion_file.csv` file which will be used as input for the analysis.py script below.
 
 `python3 analysis.py logfile_name <motion_file_1.csv> <motion_file_2.csv> ... <motion_file_N.csv>`
+
+### Usage of `smoother-analysis.py`:
+This script is a combination of `tottagSmoother.py`, `motion.py`, and `analysis-df.py`. 
+
+This script accepts 4 inputs, the first input is the smoothing value, and the rest are log files to smooth and analysis. Note that the first input log file should be the one that you want to do analysis on. 
+
+This script first smooths all the input log files and output a smoothed file for each. It then does motion analysis on each log file and produce a motion data file for each. It finally does an analysis on the first input log file.
+
+This script outputs 7 files, including 3 smoothed files, 3 motion files, and 1 analysis result. 
+
+The script is run like this:
+
+`python3 smoother-analysis.py smooth_val logfile_name1 logfile_name2 logfile_name3`
