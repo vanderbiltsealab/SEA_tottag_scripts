@@ -1,24 +1,85 @@
 import os
 import sys
 import pandas as pd
-
+from sortedcontainers import SortedDict
 
 OUT_OF_RANGE_CODE = 999999
-logs = sys.argv[2:]
 smoothVal = int(sys.argv[1])
+vals = sys.argv[2:4]
+logs = sys.argv[4:]
 logfile_date = None
-#logs = ["4F@03-20.LOG", "50@03-20.LOG", "51@03-20.LOG"]
-#smoothVal = 3
+# vals = [1616240535, 1616284741]
+# logs = ["4F@03-20.LOG", "50@03-20.LOG", "51@03-20.LOG"]
+averaged_logs = []
+smoothed_logs = []
+# smoothVal = 3
 inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 # First file input is the one that we will analyse
-DATAFILE = logs[0]
 MOTION = []
+
+# average
+for i in logs:
+
+    outFile = i[:-4] + "-averaged.log"
+    s = open(outFile,"w+")
+    averaged_logs.append(outFile)
+
+    with open(i) as f:
+
+        tag = f.readline()
+        header = tag
+
+        if tag.strip(): # strip will remove all leading and trailing whitespace such as '\n' or ' ' by default
+            tag = tag.strip("\n ' '")
+            tag = tag.split()[6].split(',')[0]
+        sd = SortedDict()
+
+        for line in f:
+            # if line is not a comment, or if line does not contain any hashtags
+            if line[0] != '#' and line.find('#') == -1:
+                tokens = line.split('\t')
+                if (int(tokens[2]) != OUT_OF_RANGE_CODE):
+                    if (int(tokens[0]) >= int(vals[0]) and int(tokens[0]) <= int(vals[1])):
+                        sd.setdefault(tokens[0], {}).setdefault(tokens[1], []).append(tokens[2].rstrip('\n'))
+
+        for x in logs:
+
+            if (x != i):
+                with open(x) as w:
+                    find = w.readline()
+
+                    if find.strip(): # strip will remove all leading and trailing whitespace such as '\n' or ' ' by default
+                        find = find.strip("\n ' '")
+                        find = find.split()[6].split(',')[0]
+
+                    for row in w:
+                        # if line is not a comment, or if line does not contain any hashtags
+                        if row[0] != '#' and row.find('#') == -1:
+                            token = row.split('\t')
+                            if token[1] == tag:
+                                if int(token[2]) != OUT_OF_RANGE_CODE:
+                                    if int(token[0]) >= int(vals[0]) and int(token[0]) <= int(vals[1]):
+                                        sd.setdefault(token[0], {}).setdefault(find, []).append(token[2].rstrip('\n'))
+                w.close()
+
+        totalVal = 0
+        s.write(header)
+
+        for time in sd:
+            for tag in sd[time]:
+                for val in sd[time][tag]:
+                    totalVal += int(val)
+                s.write(time+'\t'+tag+'\t'+str(int(totalVal/len(sd[time][tag])))+'\n')
+                totalVal = 0
+
+    f.close()
 
 
 # class to handle the moving average.
 # works kind of like a queue, keeping smoothVal values stored
 class SmoothedGroup:
+
     def __init__(self, time, mote, val, size, s):
         self.stamps = []
         self.data = []
@@ -55,14 +116,19 @@ class SmoothedGroup:
 
 
 # Smooth
-for i in logs:
-    outFile = i[:-4] + "-smoothed.log"
+for i in averaged_logs:
+
+    outFile = i[:-13] + "-smoothed.log"
     s = open(outFile, "w+")
+    smoothed_logs.append(outFile)
     first = {}
     classDict = {}
+
     with open(i) as f:
         s.write(f.readline())
+
         for line in f:
+
             if line[0] != '#' and line.find('#') == -1:
                 tokens = line.split('\t')
                 # this if only operates on the first recording from each mote.
@@ -73,6 +139,7 @@ for i in logs:
                 elif int(tokens[2]) != OUT_OF_RANGE_CODE:
                     # checks here for time skips
                     timeDiff = int(tokens[0]) - classDict[tokens[1]].lastTime
+
                     if timeDiff == 1:
                         classDict[tokens[1]].addVal(int(tokens[0]), int(tokens[2]))
                     # If the skip is small, fills in time with current value
@@ -86,6 +153,8 @@ for i in logs:
         f.close()
     s.close()
 
+
+DATAFILE = smoothed_logs[0]
 # Get Motion Data
 mot = []  # motion list
 times = []  # times list
@@ -93,7 +162,6 @@ recording_device = 0
 
 
 def find_motion(data):
-    MOTION = []
     with open(data) as f:
         # the following string operation gets the ID for the current device
         tag = f.readline()
@@ -103,7 +171,7 @@ def find_motion(data):
             totTagID = tag.split()[6].split(',')[0]
 
         for line in f:
-            if ((line.find('HEADER') != -1) and (line.find('Device: ') != -1)):
+            if (line.find('HEADER') != -1) and (line.find('Device: ') != -1):
                 recording_device = line[(line.find('Device: ')+8):].rstrip('\n')
 
             elif (line[0] == '#') and (line.find('MOTION CHANGE: ') != -1) and (line.find('Timestamp: ') != -1):
@@ -243,9 +311,9 @@ for df in df_lst:
     df["check_in"] = check_in
 
 # out to csv for debugging purposes
-# df_lst[0].to_csv("d1", sep="\t")
-# df_lst[1].to_csv("d2", sep="\t")
-# df_lst[2].to_csv("d3", sep="\t")
+df_lst[0].to_csv("d1", sep="\t")
+df_lst[1].to_csv("d2", sep="\t")
+df_lst[2].to_csv("d3", sep="\t")
 
 # concat data frames for pairs of devices
 whole = pd.concat(df_lst)
@@ -254,6 +322,7 @@ whole = pd.DataFrame(whole).sort_values(by=['timestamp'])
 # remove empty(NA) values
 whole.dropna(axis=0, how='any', thresh=None, subset=None, inplace=False)
 
+whole.to_csv("before_motion.csv")
 
 # -----From here, we will start to add in motions data...----------
 
@@ -307,22 +376,38 @@ for df in motion_lst:
 
     # drop_duplicates: there were duplicate timestamps, so we want to remove them
     # dropna: this remove NA values
-    df = df.drop_duplicates(subset=['timestamp']).dropna(subset=['motion'+str(motion_name[count])])
+    # df = df.drop_duplicates(subset=['timestamp']).dropna(subset=['motion'+str(motion_name[count])])
 
     # convert data type to int
     # (if we do not do this, motion data value would be floating point type)
-    df = pd.DataFrame.astype(self=df, dtype=int)
+    # df = pd.DataFrame.astype(self=df, dtype=int)
 
     # merge motion data to previous data frame,
     # this will add a motions column to end of original data frame
-    merged = pd.merge(merged, df, on=['timestamp'])
-
+    merged = pd.merge(merged, df, on=['timestamp'], how="outer")
+    merged = pd.DataFrame(merged).sort_values(by=['timestamp'])
     count += 1
 
+
+# This part is necessary because when doing a 'outer' merge in the previous look,
+# null values are being introduced in many columns. Since int does not support N/A
+# values, pandas does an automatic conversion from int to float.
+# These few lines of code fills null values with numeric values and convert them back to int
+"""
+for name in motion_name:
+    col_name = "motion" + name
+    merged[col_name].fillna(888888, inplace=True)
+    merged[col_name] = pd.DataFrame.astype(self=merged[col_name], dtype=int)
+
+
+merged["check_in"].fillna(888888, inplace=True)
+merged["check_in"] = pd.DataFrame.astype(self=merged["check_in"], dtype=int)
+"""
 # remove in-range col, not needed in final result
+
 del merged["in_range"]
 
 # out file
-outf_name = DATAFILE[:-4] + "-merged.csv"
+outf_name = DATAFILE[:-13] + "-merged.csv"
 merged.to_csv(outf_name, sep="\t", index=False)
 
