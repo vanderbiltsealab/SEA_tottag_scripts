@@ -49,7 +49,7 @@ For the motion.py file use : `python3 motion.py file_name` to process the logfil
 ### Usage of `smoother-analysis.py`:
 This script is a combination of `tottagAverager.py`, `tottagSmoother.py`, `motion.py`, and `analysis-df.py`. 
 
-This script accepts 6 inputs, the first input is the smoothing value, the next two inputs are the start and end timestamps that you wish to analyse, and the rest are log files to smooth and analysis. Note that the first input log file should be the one that you want to do analysis on. 
+This script accepts 4 inputs, the first input is the smoothing value, and the rest are log files to smooth and analysis. Note that the first input log file should be the one that you want to do analysis on. 
 
 This script first average the log files and produce an averaged file for each log file, it then smooths all the input log files and output a smoothed file for each. Next, it does motion analysis on each log file and produce a motion data file for each. It finally does an analysis on the first input log file.
 
@@ -57,4 +57,4 @@ This script outputs 10 files, including 3 averaged files, 3 smoothed files, 3 mo
 
 The script is run like this:
 
-`python3 smoother-analysis.py start_timestamp, end_timestamp, smooth_val logfile_name1 logfile_name2 logfile_name3`
+`python3 smoother-analysis.py smooth_val logfile_name1 logfile_name2 logfile_name3`
