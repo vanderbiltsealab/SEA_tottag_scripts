@@ -5,10 +5,8 @@ from sortedcontainers import SortedDict
 
 OUT_OF_RANGE_CODE = 999999
 smoothVal = int(sys.argv[1])
-# vals = sys.argv[2:4]
 logs = sys.argv[2:]
 logfile_date = None
-# vals = [1616240535, 1616284741]
 # logs = ["4F@03-20.LOG", "50@03-20.LOG", "51@03-20.LOG"]
 averaged_logs = []
 smoothed_logs = []
@@ -176,7 +174,8 @@ def find_motion(data):
             if (line.find('HEADER') != -1) and (line.find('Device: ') != -1):
                 recording_device = line[(line.find('Device: ')+8):].rstrip('\n')
 
-            elif (line[0] == '#') and (line.find('MOTION CHANGE: ') != -1) and (line.find('Timestamp: ') != -1):
+            elif (line[0] == '#') and (line.find('MOTION CHANGE: ') != -1) and (line.find('Timestamp: ') != -1) \
+                    and line[3:].find("#") == -1:
                 times.append(int(line[(line.find('Timestamp: ')+11):].rstrip('\n')))
                 mot.append(1 if (line[(line.find('MOTION CHANGE: ')+15):line.find('; ')] == 'IN MOTION') else 0)
             # elif (line.find('HEADER') != -1) and (line.find('Device: ') != -1) and (line.find('Timestamp: ') != -1):
@@ -184,7 +183,7 @@ def find_motion(data):
             #     timestamp = int(line[(line.find('Timestamp: ')+11):].rstrip('\n'))
             #     logfile_date = datetime.utcfromtimestamp(timestamp)
         d = {'Timestamp': times, 'Motion': mot, 'Device': totTagID}
-        d = pd.DataFrame(d).sort_values(by=['Timestamp']) # this correctly orders based off 'Timestamp'!
+        d = pd.DataFrame(d).sort_values(by=['Timestamp'])  # this correctly orders based off 'Timestamp'!
         filename = LOGFILE[:-4] + '-motion.csv'
         d.to_csv(filename, index=False)
         return filename
