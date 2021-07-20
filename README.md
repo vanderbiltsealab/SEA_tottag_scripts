@@ -46,7 +46,7 @@ For the motion.py file use : `python3 motion.py file_name` to process the logfil
 
 `python3 analysis.py logfile_name <motion_file_1.csv> <motion_file_2.csv> ... <motion_file_N.csv>`
 
-### Usage of `smoother-analysis.py`:
+### Usage of `analysis-pro.py`:
 This script is a combination of `tottagAverager.py`, `tottagSmoother.py`, `motion.py`, and `analysis-df.py`. 
 
 This script accepts 4 inputs, the first input is the smoothing value, and the rest are log files to smooth and analysis. Note that the first input log file should be the one that you want to do analysis on. 
