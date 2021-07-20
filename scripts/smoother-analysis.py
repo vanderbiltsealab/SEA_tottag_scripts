@@ -5,8 +5,8 @@ from sortedcontainers import SortedDict
 
 OUT_OF_RANGE_CODE = 999999
 smoothVal = int(sys.argv[1])
-vals = sys.argv[2:4]
-logs = sys.argv[4:]
+# vals = sys.argv[2:4]
+logs = sys.argv[2:]
 logfile_date = None
 # vals = [1616240535, 1616284741]
 # logs = ["4F@03-20.LOG", "50@03-20.LOG", "51@03-20.LOG"]
@@ -17,6 +17,8 @@ inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 # First file input is the one that we will analyse
 MOTION = []
+
+print("Processing...")
 
 # average
 for i in logs:
@@ -40,8 +42,8 @@ for i in logs:
             if line[0] != '#' and line.find('#') == -1:
                 tokens = line.split('\t')
                 if (int(tokens[2]) != OUT_OF_RANGE_CODE):
-                    if (int(tokens[0]) >= int(vals[0]) and int(tokens[0]) <= int(vals[1])):
-                        sd.setdefault(tokens[0], {}).setdefault(tokens[1], []).append(tokens[2].rstrip('\n'))
+                    #if (int(tokens[0]) >= int(vals[0]) and int(tokens[0]) <= int(vals[1])):
+                    sd.setdefault(tokens[0], {}).setdefault(tokens[1], []).append(tokens[2].rstrip('\n'))
 
         for x in logs:
 
@@ -59,8 +61,8 @@ for i in logs:
                             token = row.split('\t')
                             if token[1] == tag:
                                 if int(token[2]) != OUT_OF_RANGE_CODE:
-                                    if int(token[0]) >= int(vals[0]) and int(token[0]) <= int(vals[1]):
-                                        sd.setdefault(token[0], {}).setdefault(find, []).append(token[2].rstrip('\n'))
+                                    # if int(token[0]) >= int(vals[0]) and int(token[0]) <= int(vals[1]):
+                                    sd.setdefault(token[0], {}).setdefault(find, []).append(token[2].rstrip('\n'))
                 w.close()
 
         totalVal = 0
@@ -410,4 +412,5 @@ del merged["in_range"]
 # out file
 outf_name = DATAFILE[:-13] + "-merged.csv"
 merged.to_csv(outf_name, sep="\t", index=False)
+print("Finished.")
 
