@@ -342,6 +342,7 @@ for indx in range(len(logs)):
                                   names=["timestamp", "motion"+str(motion_name[count]), "Other_Device"], sep=","))
         count += 1
 
+    '''
     start_lst = []
     end_lst = []
     # go through motion data frames and get start and end values
@@ -351,7 +352,9 @@ for indx in range(len(logs)):
 
     # all_timestamp is all the timestamps from the smallest start value to largest end value
     all_timestamp = list(range(min(start_lst), max(end_lst), 1))
-
+    '''
+    all_timestamp = list(range(motion_lst[indx]["timestamp"].min(), motion_lst[indx]["timestamp"].max() + 1, 1))
+    print(all_timestamp[-1])
     # create a data frame of timestamps using the previously obtained 'all_timestamp' array
     time = pd.DataFrame(all_timestamp, columns=["timestamp"])
     # start to process motion data and merge with proximity data
@@ -390,6 +393,7 @@ for indx in range(len(logs)):
 
     # remove in-range col, not needed in final result
     del merged["in_range"]
+    merged = merged[merged["timestamp"] <= time_range[-1]]
     print("Producing merged file " + str(indx + 1) + " ...")
     outf_name = str(logs[indx])[:-4] + "-merged.csv"
     merged.to_csv(outf_name, sep="\t", index=False)

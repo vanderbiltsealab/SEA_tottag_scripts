@@ -22,7 +22,7 @@ print("Processing...")
 for i in logs:
 
     outFile = i[:-4] + "-averaged.log"
-    s = open(outFile,"w+")
+    s = open(outFile, "w+")
     averaged_logs.append(outFile)
 
     with open(i) as f:
@@ -312,9 +312,9 @@ for df in df_lst:
     df["check_in"] = check_in
 
 # out to csv for debugging purposes
-df_lst[0].to_csv("d1", sep="\t")
-df_lst[1].to_csv("d2", sep="\t")
-df_lst[2].to_csv("d3", sep="\t")
+# [0].to_csv("d1", sep="\t")
+# df_lst[1].to_csv("d2", sep="\t")
+# df_lst[2].to_csv("d3", sep="\t")
 
 # concat data frames for pairs of devices
 whole = pd.concat(df_lst)
