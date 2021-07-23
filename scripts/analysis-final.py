@@ -156,13 +156,15 @@ for i in averaged_logs:
 
 
 DATAFILE = smoothed_logs[0]
-# Get Motion Data
-mot = []  # motion list
-times = []  # times list
-recording_device = 0
 
 
 def find_motion(data):
+
+    # Get Motion Data
+    mot = []  # motion list
+    times = []  # times list
+    recording_device = 0
+
     with open(data) as f:
         # the following string operation gets the ID for the current device
         tag = f.readline()
@@ -261,7 +263,20 @@ for indx in range(len(logs)):
 
     for df in lst:
         # if within touching range, 'in_range' is 1, otherwise 0
-        df["in_range"] = df.apply(lambda row: row["distance"] < inRangeDist, axis=1)
+        # fixme
+        # df["in_range"] = df.apply(lambda row: row["distance"] < inRangeDist, axis=1)
+
+        dist_lst = df["distance"].tolist()
+        in_range = []
+        for i in range(len(dist_lst)):
+            if dist_lst[i] < inRangeDist:
+                in_range.append(1)
+            else:
+                in_range.append(0)
+
+        df = df.insert(3, "in_range", in_range, True)
+
+
 
     for df in lst:
         # init two arrays to hold values
@@ -319,7 +334,8 @@ for indx in range(len(logs)):
 
         # append a new 'check_in' col to data frame
         # content of this column is the values of the check_in array
-        df["check_in"] = check_in
+        # df["check_in"] = check_in
+        df = df.assign(check_in=check_in)
         df_lst.append(df)
 
     # concat data frames for pairs of devices
@@ -342,6 +358,9 @@ for indx in range(len(logs)):
                                   names=["timestamp", "motion"+str(motion_name[count]), "Other_Device"], sep=","))
         count += 1
 
+    for motion_df in motion_lst:
+        motion_df = motion_df.drop_duplicates(subset=['timestamp'], inplace=True)
+
     '''
     start_lst = []
     end_lst = []
@@ -353,6 +372,7 @@ for indx in range(len(logs)):
     # all_timestamp is all the timestamps from the smallest start value to largest end value
     all_timestamp = list(range(min(start_lst), max(end_lst), 1))
     '''
+
     all_timestamp = list(range(motion_lst[indx]["timestamp"].min(), motion_lst[indx]["timestamp"].max() + 1, 1))
     print(all_timestamp[-1])
     # create a data frame of timestamps using the previously obtained 'all_timestamp' array
@@ -394,6 +414,9 @@ for indx in range(len(logs)):
     # remove in-range col, not needed in final result
     del merged["in_range"]
     merged = merged[merged["timestamp"] <= time_range[-1]]
+    merged = merged[merged["timestamp"] >= time_range[0]]
+    # 1626055412
+    merged = merged.drop_duplicates()
     print("Producing merged file " + str(indx + 1) + " ...")
     outf_name = str(logs[indx])[:-4] + "-merged.csv"
     merged.to_csv(outf_name, sep="\t", index=False)
