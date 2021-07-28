@@ -5,13 +5,13 @@ import numpy as np
 from sortedcontainers import SortedDict
 
 OUT_OF_RANGE_CODE = 999999
-# smoothVal = int(sys.argv[1])
-# logs = sys.argv[2:]
+smoothVal = int(sys.argv[1])
+logs = sys.argv[2:]
 logfile_date = None
-logs = ["logfiles/4A@07-12.LOG", "logfiles/50@07-12.LOG", "logfiles/51@07-12.LOG", "logfiles/54@07-12.LOG"]
+# logs = ["logfiles/4A@07-12.LOG", "logfiles/50@07-12.LOG", "logfiles/51@07-12.LOG", "logfiles/54@07-12.LOG"]
 averaged_logs = []
 smoothed_logs = []
-smoothVal = 3
+# smoothVal = 3
 inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 # First file input is the one that we will analyse
@@ -179,14 +179,20 @@ def find_motion(data):
 
             elif (line[0] == '#') and (line.find('MOTION CHANGE: ') != -1) and (line.find('Timestamp: ') != -1) \
                     and line[3:].find("#") == -1:
-                times.append(int(line[(line.find('Timestamp: ')+11):].rstrip('\n')))
-                mot.append(1 if (line[(line.find('MOTION CHANGE: ')+15):line.find('; ')] == 'IN MOTION') else 0)
-            # elif (line.find('HEADER') != -1) and (line.find('Device: ') != -1) and (line.find('Timestamp: ') != -1):
-            #     recording_device = line[(line.find('Device: ')+8):line.find(', Date:')]
-            #     timestamp = int(line[(line.find('Timestamp: ')+11):].rstrip('\n'))
-            #     logfile_date = datetime.utcfromtimestamp(timestamp)
-        d = {'Timestamp': times, 'Motion': mot, 'Device': totTagID}
+                # sometimes, the same timestamp gets two motion data recordings, and we want to remove both data
+                # if the current timestamp we are trying to append is equal to the previous timestamp we appended,
+                # then we remove the previously appended timestamp and motion data(last element in list)
+                if len(times) != 0 and int(line[(line.find('Timestamp: ')+11):].rstrip('\n')) == times[-1]:
+                    times = times[:-1]
+                    mot = mot[:-1]
+                else:
+                    # other wise, we use string operations tto get timestamp and motion data and append them to lists
+                    times.append(int(line[(line.find('Timestamp: ')+11):].rstrip('\n')))
+                    mot.append(1 if (line[(line.find('MOTION CHANGE: ')+15):line.find('; ')] == 'IN MOTION') else 0)
+
+        d = {'Timestamp': times, 'Motion': mot, 'Device': totTagID} # create a data frame with lists
         d = pd.DataFrame(d).sort_values(by=['Timestamp'])  # this correctly orders based off 'Timestamp'!
+        # print to output file
         filename = LOGFILE[:-4] + '-motion.csv'
         d.to_csv(filename, index=False)
         return filename
@@ -195,6 +201,7 @@ def find_motion(data):
 # Call function on every input logfile
 for LOGFILE in logs:
     file = find_motion(LOGFILE)
+    # keep a list of motion file names for further processing
     MOTION.append(file)
 
 
@@ -413,6 +420,7 @@ for indx in range(len(logs)):
 
     # remove in-range col, not needed in final result
     del merged["in_range"]
+    print(str(time_range[0]) + " " + str(time_range[-1]))
     merged = merged[merged["timestamp"] <= time_range[-1]]
     merged = merged[merged["timestamp"] >= time_range[0]]
     # 1626055412
