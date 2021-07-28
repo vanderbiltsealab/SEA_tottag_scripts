@@ -18,6 +18,14 @@ MOTION = []
 
 print("Processing...")
 
+
+def get_device_id(file):
+    with open(file) as f:
+        tag = f.readline()
+        tag = tag.strip("\n ' '")
+        return tag.split()[6].split(',')[0][:-1]
+
+
 # average
 for i in logs:
 
@@ -155,13 +163,14 @@ for i in averaged_logs:
 
 
 DATAFILE = smoothed_logs[0]
-# Get Motion Data
-mot = []  # motion list
-times = []  # times list
-recording_device = 0
-
 
 def find_motion(data):
+
+    # Get Motion Data
+    mot = []  # motion list
+    times = []  # times list
+    recording_device = 0
+
     with open(data) as f:
         # the following string operation gets the ID for the current device
         tag = f.readline()
@@ -176,12 +185,17 @@ def find_motion(data):
 
             elif (line[0] == '#') and (line.find('MOTION CHANGE: ') != -1) and (line.find('Timestamp: ') != -1) \
                     and line[3:].find("#") == -1:
-                times.append(int(line[(line.find('Timestamp: ')+11):].rstrip('\n')))
-                mot.append(1 if (line[(line.find('MOTION CHANGE: ')+15):line.find('; ')] == 'IN MOTION') else 0)
-            # elif (line.find('HEADER') != -1) and (line.find('Device: ') != -1) and (line.find('Timestamp: ') != -1):
-            #     recording_device = line[(line.find('Device: ')+8):line.find(', Date:')]
-            #     timestamp = int(line[(line.find('Timestamp: ')+11):].rstrip('\n'))
-            #     logfile_date = datetime.utcfromtimestamp(timestamp)
+                # sometimes, the same timestamp gets two motion data recordings, and we want to remove both data
+                # if the current timestamp we are trying to append is equal to the previous timestamp we appended,
+                # then we remove the previously appended timestamp and motion data(last element in list)
+                if len(times) != 0 and int(line[(line.find('Timestamp: ') + 11):].rstrip('\n')) == times[-1]:
+                    times = times[:-1]
+                    mot = mot[:-1]
+                else:
+                    # other wise, we use string operations tto get timestamp and motion data and append them to lists
+                    times.append(int(line[(line.find('Timestamp: ') + 11):].rstrip('\n')))
+                    mot.append(1 if (line[(line.find('MOTION CHANGE: ') + 15):line.find('; ')] == 'IN MOTION') else 0)
+
         d = {'Timestamp': times, 'Motion': mot, 'Device': totTagID}
         d = pd.DataFrame(d).sort_values(by=['Timestamp'])  # this correctly orders based off 'Timestamp'!
         filename = LOGFILE[:-4] + '-motion.csv'
@@ -374,14 +388,6 @@ for df in motion_lst:
 
     # delete unnecessary columnn
     del df["Other_Device"]
-
-    # drop_duplicates: there were duplicate timestamps, so we want to remove them
-    # dropna: this remove NA values
-    # df = df.drop_duplicates(subset=['timestamp']).dropna(subset=['motion'+str(motion_name[count])])
-
-    # convert data type to int
-    # (if we do not do this, motion data value would be floating point type)
-    # df = pd.DataFrame.astype(self=df, dtype=int)
 
     # merge motion data to previous data frame,
     # this will add a motions column to end of original data frame

@@ -5,19 +5,25 @@ import numpy as np
 from sortedcontainers import SortedDict
 
 OUT_OF_RANGE_CODE = 999999
-smoothVal = int(sys.argv[1])
-logs = sys.argv[2:]
+# smoothVal = int(sys.argv[1])
+# logs = sys.argv[2:]
 logfile_date = None
-# logs = ["logfiles/4A@07-12.LOG", "logfiles/50@07-12.LOG", "logfiles/51@07-12.LOG", "logfiles/54@07-12.LOG"]
+logs = ["logfiles/4A@07-12.LOG", "logfiles/50@07-12.LOG", "logfiles/51@07-12.LOG", "logfiles/54@07-12.LOG"]
 averaged_logs = []
 smoothed_logs = []
-# smoothVal = 3
+smoothVal = 3
 inRangeDist = 915  # 3ft = 915mm
 device_id = ""
 # First file input is the one that we will analyse
 MOTION = []
 
 print("Processing...")
+
+def get_device_id(file):
+    with open(file) as f:
+        tag = f.readline()
+        tag = tag.strip("\n ' '")
+        return tag.split()[6].split(',')[0][:-1]
 
 # average
 for i in logs:
@@ -155,7 +161,7 @@ for i in averaged_logs:
     s.close()
 
 
-DATAFILE = smoothed_logs[0]
+# DATAFILE = smoothed_logs[0]
 
 
 def find_motion(data):
@@ -198,29 +204,20 @@ def find_motion(data):
         return filename
 
 
+motion_name = []
 # Call function on every input logfile
 for LOGFILE in logs:
+
     file = find_motion(LOGFILE)
     # keep a list of motion file names for further processing
     MOTION.append(file)
 
+    # get list device tags of the devices in motion files
+    # used for naming columns later
+    motion_name.append(get_device_id(LOGFILE)[-2:])
+
 
 # Now Do Analysis
-# get list device tags of the devices in motion files
-# used for naming columns later
-motion_name = []
-for file_name in MOTION:
-    motion_name.append(file_name[0:2])
-
-
-def get_device_id(file):
-    with open(file) as f:
-        tag = f.readline()
-        tag = tag.strip("\n ' '")
-        return tag.split()[6].split(',')[0][:-1]
-
-
-# for i in range(1):
 for indx in range(len(logs)):
     df_lst = []
     # get id of current device(the one we are analysing)
@@ -241,12 +238,7 @@ for indx in range(len(logs)):
     smoothed_df = pd.read_csv(smoothed_logs[indx], comment="#", names=["timestamp", "device2", "distance"], sep="\t")
 
     # use max and min timestamp to get a list of all timestamps that we want in the final result
-    # fixme: in 50@07-12.LOG, there are still motion data after it stops recording position changes,
-    #  do we still want those?
-    # fixme: if we do want those, need to change the min to the min of motion_timestamp & [timestamp] min
     time_range = list(range(raw_df["timestamp"].min(), raw_df["timestamp"].max() + 1, 1))
-    # print("min: " + str(time_range[0]))
-    # print("max: " + str(time_range[-1]))
 
     device1_lst = []
     device1_lst = np.full(len(time_range), cur_device_id)
@@ -269,9 +261,6 @@ for indx in range(len(logs)):
     in_range_col = 4
 
     for df in lst:
-        # if within touching range, 'in_range' is 1, otherwise 0
-        # fixme
-        # df["in_range"] = df.apply(lambda row: row["distance"] < inRangeDist, axis=1)
 
         dist_lst = df["distance"].tolist()
         in_range = []
@@ -282,8 +271,6 @@ for indx in range(len(logs)):
                 in_range.append(0)
 
         df = df.insert(3, "in_range", in_range, True)
-
-
 
     for df in lst:
         # init two arrays to hold values
@@ -381,7 +368,6 @@ for indx in range(len(logs)):
     '''
 
     all_timestamp = list(range(motion_lst[indx]["timestamp"].min(), motion_lst[indx]["timestamp"].max() + 1, 1))
-    print(all_timestamp[-1])
     # create a data frame of timestamps using the previously obtained 'all_timestamp' array
     time = pd.DataFrame(all_timestamp, columns=["timestamp"])
     # start to process motion data and merge with proximity data
@@ -420,13 +406,14 @@ for indx in range(len(logs)):
 
     # remove in-range col, not needed in final result
     del merged["in_range"]
-    print(str(time_range[0]) + " " + str(time_range[-1]))
     merged = merged[merged["timestamp"] <= time_range[-1]]
     merged = merged[merged["timestamp"] >= time_range[0]]
-    # 1626055412
     merged = merged.drop_duplicates()
-    print("Producing merged file " + str(indx + 1) + " ...")
+    print("Producing result " + str(indx + 1) + " ...")
     outf_name = str(logs[indx])[:-4] + "-merged.csv"
     merged.to_csv(outf_name, sep="\t", index=False)
+
+
+print("Finished.")
 
 
