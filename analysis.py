@@ -5,7 +5,7 @@ import numpy as np
 from sortedcontainers import SortedDict
 
 """
-Command to run this script looks like: python3 analysis-df-ver4.py smooth_val logfile1 logfile2 logfile3
+Command to run this script looks like: python3 analysis.py smooth_val logfile1 logfile2 logfile3 ...
 """
 
 # accept user input
