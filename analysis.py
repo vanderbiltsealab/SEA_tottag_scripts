@@ -58,14 +58,19 @@ for i in logs:
         for line in f:
             # if line is not a comment, or if line does not contain any hashtags
             if line[0] != '#' and line.find('#') == -1:
-                tokens = line.split('\t')
-                if (int(tokens[2]) != OUT_OF_RANGE_CODE):
-                    #if (int(tokens[0]) >= int(vals[0]) and int(tokens[0]) <= int(vals[1])):
-                    sd.setdefault(tokens[0], {}).setdefault(tokens[1], []).append(tokens[2].rstrip('\n'))
+                if line.count("\t") < 2:
+                    print("Check row: '" + line + "' in " + str(f))
+                    # fixme:
+                    sys.exit()
+                else:
+                    tokens = line.split('\t')
+                    if int(tokens[2]) != OUT_OF_RANGE_CODE:
+                        sd.setdefault(tokens[0], {}).setdefault(tokens[1], []).append(tokens[2].rstrip('\n'))
+
 
         for x in logs:
 
-            if (x != i):
+            if x != i:
                 with open(x) as w:
                     find = w.readline()
 
@@ -76,11 +81,17 @@ for i in logs:
                     for row in w:
                         # if line is not a comment, or if line does not contain any hashtags
                         if row[0] != '#' and row.find('#') == -1:
-                            token = row.split('\t')
-                            if token[1] == tag:
-                                if int(token[2]) != OUT_OF_RANGE_CODE:
-                                    # if int(token[0]) >= int(vals[0]) and int(token[0]) <= int(vals[1]):
-                                    sd.setdefault(token[0], {}).setdefault(find, []).append(token[2].rstrip('\n'))
+                            # check for errors in raw log file, sometimes there may be misprints
+                            if row.count("\t") < 2:
+                                print("Check row: '" + row + "' in " + str(x) +
+                                      " (Add '#' in front of row to comment it out)")
+                                sys.exit()
+                            else:
+                                token = row.split('\t')
+                                if token[1] == tag:
+                                    if int(token[2]) != OUT_OF_RANGE_CODE:
+                                        sd.setdefault(token[0], {}).setdefault(find, []).append(token[2].rstrip('\n'))
+
                 w.close()
 
         totalVal = 0
@@ -136,15 +147,15 @@ class SmoothedGroup:
 
 
 # Smooth
-for i in averaged_logs:
+for a in averaged_logs:
 
-    outFile = i[:-13] + "-smoothed.log"
+    outFile = a[:-13] + "-smoothed.log"
     s = open(outFile, "w+")
     smoothed_logs.append(outFile)
     first = {}
     classDict = {}
 
-    with open(i) as f:
+    with open(a) as f:
         s.write(f.readline())
 
         for line in f:
@@ -245,7 +256,6 @@ for LOGFILE in logs:
     # used for naming columns later
     motion_name.append(get_device_id(LOGFILE)[-2:])
 
-
 # Now Do Analysis
 # General logic: e.g. using devices a, b, c. First get a time range between first recorded prox data and last prox data.
 #   Then create 2 different data frames for device pairs a&b and a&c, where the time stamp column includes all
@@ -273,7 +283,6 @@ for indx in range(len(logs)):
 
     # use max and min timestamp to get a list of all timestamps that we want in the final result
     time_range = list(range(raw_df["timestamp"].min(), raw_df["timestamp"].max() + 1, 1))
-
     # device1_lst is just a list containing only current device id, with the same lengths as time-range
     # it will be used as a column in the result data frame
     device1_lst = []
@@ -350,7 +359,6 @@ for indx in range(len(logs)):
                     # if we have 2 consecutive seconds within checkin range, update check_in array
                     if count >= 2:
 
-                        # update check_in array
                         check_in[index + 1] = check_num
 
                         # the check_in val at the start timestamp of the checkin need to be updated
