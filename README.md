@@ -11,7 +11,7 @@ This script accepts a group of raw log files. It performs averaging (also see `P
 
 The final merged result is a csv file containing a data frame that includes the columns "timestamp", "device1", "device2", "distance"(between device1 and device 2), "check-in"(whether two devices are within check-in range for over 2 seconds), and motion status of each device, at all timestamps for each raw log file.
 
-#### Running `analysis.py`
+## Running `analysis.py`
 
 This script accepts an integer that specifies the smooth value and the names of all log files in a group (can be as many as you want). It outputs 4 files for each log file in the group, including averaged file, smoothed file, motion data file, and merged analysis result. 
 
@@ -22,3 +22,6 @@ The command to run this script looks like:
 An example command:
 
 `python3 analysis.py 3 4A@07-12.LOG 50@07-12.LOG 51@07-12.LOG 54@07-12.LOG`
+
+### IMPORTANT NOTE
+Sometimes there can be misprints in the raw log files which stop the analysis process. When this happens, the code will exit and prints a message that tells you which line in which log file had the error. You will need to go to that log file and manually comment out the line by adding a `#` at the front of that line.
